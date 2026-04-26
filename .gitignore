@@ -1,0 +1,51 @@
+########################
+# ENV (CỰC KỲ QUAN TRỌNG)
+########################
+.env
+*.env
+rasabot/.env
+
+########################
+# SPRING BOOT
+########################
+footballmanagement/target/
+footballmanagement/.mvn/wrapper/maven-wrapper.jar
+
+########################
+# RASA / PYTHON
+########################
+rasabot/venv/
+rasabot/__pycache__/
+rasabot/*.py[cod]
+rasabot/.rasa/
+
+# ⚠️ KHÔNG ignore models
+# vì container cần model để chạy
+# rasabot/models/
+
+########################
+# IDE
+########################
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+########################
+# OS
+########################
+.DS_Store
+Thumbs.db
+
+########################
+# LOGS
+########################
+*.log
+
+########################
+# DOCKER (optional)
+########################
+docker-compose.override.yml
+
+footballmanagement/src/main/resources/application.properties

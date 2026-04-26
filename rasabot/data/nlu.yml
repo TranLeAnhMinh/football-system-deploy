@@ -1,0 +1,110 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - xin chào
+    - chào bạn
+    - hello
+    - hi
+    - chào bot
+    - alo
+    - ê bot
+
+- intent: goodbye
+  examples: |
+    - tạm biệt
+    - bye
+    - bai
+    - goodbye
+    - hẹn gặp lại
+    - thôi nhé
+    - cảm ơn nhé bye
+    - ok bye
+    - chào nha
+
+- intent: ask_branch_count
+  examples: |
+    - có bao nhiêu chi nhánh
+    - hệ thống có mấy chi nhánh
+    - có mấy cơ sở
+    - số lượng chi nhánh là bao nhiêu
+    - bên mình có bao nhiêu chi nhánh
+- intent: ask_branch_list
+  examples: |
+    - có những chi nhánh nào
+    - liệt kê các chi nhánh
+    - danh sách chi nhánh
+    - hệ thống có những cơ sở nào
+    - cho tôi xem các chi nhánh
+    - list các chi nhánh
+
+- intent: ask_pitches_by_branch
+  examples: |
+    - quận 1 có những sân nào
+    - quận 3 có sân gì
+    - sân ở quận 7
+    - chi nhánh quận 10 có sân nào
+    - q1 có sân nào
+    - q 3 có sân gì
+    - còn quận 3 thì sao
+    - còn q7 thì sao
+    - thế quận thủ đức
+    - còn quận hai bà trưng
+    - bên q hoàng mai có sân nào
+    - q đống đa có sân nào
+    - quận hoàng mai thì sao
+    - quận 1 thì có sân nào
+    - q1 thì có sân nào
+    - cho tôi xem sân ở quận 1
+    - quận abc thì có sân nào
+    - q999 có sân nào
+    - có sân nào
+    - xem sân giúp tôi
+    - cho tôi xem sân
+
+- intent: out_of_scope
+  examples: |
+    - 1 + 1
+    - hôm nay trời đẹp nhỉ
+    - bạn biết làm toán không
+    - kể chuyện cười đi
+    - viết giúp tôi bài văn
+    - bạn là ai
+    - thời tiết hôm nay thế nào
+    - faflawfa
+    - asdasdasd
+    - ????
+    - abcxyz
+    - ầhefiugfagweegae
+    - hãy làm bài văn này cho tôi
+    - adawfffaefw
+    - bạn có thể kể chuyện cười không
+    - ăn cơm chưa
+    - bạn có thể ăn cơm không
+    - bạn có người yêu chưa
+    - bạn làm được gì ngoài việc này
+
+
+- intent: ask_available_pitches
+  examples: |
+    - quận 1 ngày 2025-09-18 từ 07:00 đến 07:45 còn sân nào
+    - q1 ngày 2025-09-18 từ 07:00 đến 08:30 còn sân nào
+    - chi nhánh quận 3 ngày 2025-09-18 từ 18:00 đến 18:45 còn sân nào
+    - quận 7 hôm nay từ 19:30 đến 20:15 còn sân nào
+    - q10 ngày mai từ 06:00 đến 06:45 còn sân nào
+    - q10 tối mai từ 06:00 đến 06:45 còn sân nào
+    - q10 sáng mai từ 06:00 đến 06:45 còn sân nào
+    - quận 1 ngày 18/09/2025 từ 07:00 đến 07:45 có sân trống không
+    - sân rảnh ở quận 1 ngày 2025-09-18 từ 07:00 đến 07:45
+    - còn sân nào ở quận 3 ngày 2025-09-18 từ 18:00 đến 18:45
+    - quận 1 từ 07:00 đến 07:45 còn sân nào
+    - quận 1 ngày 2025-09-18 còn sân nào
+
+- intent: ask_pitch_availability
+  examples: |
+    - sân Mỹ Đình ngày mai từ 19:30 đến 20:15 có trống không
+    - sân 11 Q1 - C ngày 2025-09-18 từ 07:30 đến 08:15 có rảnh không
+    - cho tôi hỏi sân A1 ngày mai từ 18:00 đến 18:45 có trống không
+    - sân Mỹ Đình có trống không
+    - sân này có rảnh không

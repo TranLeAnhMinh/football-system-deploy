@@ -1,0 +1,43 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - ask_branch_count
+  - ask_branch_list
+  - ask_pitches_by_branch
+  - ask_available_pitches
+  - out_of_scope
+  - nlu_fallback
+  - ask_pitch_availability
+
+entities:
+  - branch_name
+
+slots:
+  branch_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: branch_name
+
+responses:
+  utter_greet:
+    - text: "Chào bạn, tôi có thể giúp bạn xem chi nhánh, danh sách sân và sân theo từng chi nhánh."
+
+  utter_goodbye:
+    - text: "Tạm biệt bạn nhé. Khi nào cần tìm sân bóng thì cứ nhắn tôi."
+
+  utter_ask_branch_name:
+    - text: "Bạn muốn xem sân ở chi nhánh nào?"
+
+  utter_fallback:
+    - text: "Tôi chưa hiểu rõ ý bạn. Bạn có thể hỏi về chi nhánh hoặc sân theo chi nhánh."
+
+actions:
+  - action_count_branches
+  - action_list_branches
+  - action_list_pitches_by_branch
+  - action_check_available_pitches_by_branch
+  - action_check_pitch_availability

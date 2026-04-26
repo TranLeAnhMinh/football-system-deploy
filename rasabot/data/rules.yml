@@ -1,0 +1,47 @@
+version: "3.1"
+
+rules:
+- rule: greet
+  steps:
+    - intent: greet
+    - action: utter_greet
+
+- rule: goodbye
+  steps:
+    - intent: goodbye
+    - action: utter_goodbye
+
+- rule: count branches
+  steps:
+    - intent: ask_branch_count
+    - action: action_count_branches
+
+- rule: list branches
+  steps:
+    - intent: ask_branch_list
+    - action: action_list_branches
+
+- rule: list pitches by branch
+  steps:
+    - intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+
+- rule: out of scope
+  steps:
+    - intent: out_of_scope
+    - action: utter_fallback
+
+- rule: nlu fallback
+  steps:
+    - intent: nlu_fallback
+    - action: utter_fallback
+
+- rule: check available pitches by branch
+  steps:
+    - intent: ask_available_pitches
+    - action: action_check_available_pitches_by_branch
+
+- rule: check pitch availability
+  steps:
+    - intent: ask_pitch_availability
+    - action: action_check_pitch_availability

@@ -1,0 +1,19 @@
+version: "3.1"
+
+stories:
+- story: ask pitches by branch directly
+  steps:
+    - intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+
+- story: ask pitches by another branch in follow up
+  steps:
+    - intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+    - intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+
+- story: ask available pitches by branch
+  steps:
+    - intent: ask_available_pitches
+    - action: action_check_available_pitches_by_branch
