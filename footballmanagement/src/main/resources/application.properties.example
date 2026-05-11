@@ -1,0 +1,83 @@
+spring.application.name=footballmanagement
+app.base-url=http://localhost:8080
+
+# # PostgreSQL datasource
+# spring.datasource.url=
+# spring.datasource.username=
+# spring.datasource.password=
+# spring.datasource.driver-class-name=
+
+#PostgreSQL datasource for production
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+
+# Hibernate / JPA config
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+#JWT Configuaration
+app.jwt.secret= 
+app.jwt.access-exp-ms=90000000
+app.jwt.refresh-exp-ms=604800000
+
+# i18n Configuration
+spring.messages.basename=i18n/messages
+spring.messages.encoding=UTF-8
+spring.messages.fallback-to-system-locale=false
+
+# Multipart Upload Configuration
+spring.servlet.multipart.enabled=true
+spring.servlet.multipart.max-file-size=20MB
+spring.servlet.multipart.max-request-size=50MB
+spring.servlet.multipart.file-size-threshold=2KB
+
+
+# Mail Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=
+spring.mail.password=jjpc vmzd soko tybj   
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+spring.mail.properties.mail.smtp.writetimeout=5000
+
+# Luôn serialize thời gian theo timezone VN
+spring.jackson.time-zone=Asia/Ho_Chi_Minh
+spring.jackson.serialization.WRITE_DATES_AS_TIMESTAMPS=false
+spring.jackson.date-format=yyyy-MM-dd'T'HH:mm:ssXXX
+
+
+# Async Configuration for Email Sending
+spring.task.execution.pool.core-size=5
+spring.task.execution.pool.max-size=20
+spring.task.execution.pool.queue-capacity=100
+spring.task.execution.thread-name-prefix=EmailAsync-
+
+#VN PAY
+# vnpay.tmn-code=
+# vnpay.hash-secret=
+vnpay.tmn-code=
+vnpay.hash-secret=
+vnpay.pay-url=
+vnpay.return-url=
+
+logging.level.org.springframework.web.servlet.i18n=DEBUG
+logging.level.org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping=DEBUG
+# application.properties
+# logging.level.org.springframework.security=TRACE
+
+cloudinary.cloud-name=
+cloudinary.api-key=
+cloudinary.api-secret=
+
+spring.jpa.properties.hibernate.jdbc.batch_size=50
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+spring.jpa.properties.hibernate.jdbc.batch_versioned_data=true
