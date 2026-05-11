@@ -16,6 +16,12 @@ from actions.parsers.branch_parser import (
 )
 
 
+PAST_TIME_MESSAGE = (
+    "Thời gian bạn nhập đã ở trong quá khứ. "
+    "Hệ thống chỉ hỗ trợ kiểm tra sân cho thời gian hiện tại hoặc tương lai."
+)
+
+
 class ActionCountBranches(Action):
     def name(self) -> str:
         return "action_count_branches"
@@ -54,7 +60,6 @@ class ActionListPitchesByBranch(Action):
         branch_name = extract_branch_name_from_text(latest_text)
 
         if not branch_name:
-            # Nếu có vẻ đang hỏi về sân/chi nhánh nhưng không parse ra branch
             if has_branch_like_pattern(latest_text):
                 dispatcher.utter_message(
                     text="Chi nhánh này không tồn tại hoặc bạn ghi tên chi nhánh chưa đúng."
@@ -85,12 +90,18 @@ class ActionListPitchesByBranch(Action):
         )
         return []
 
+
 class ActionCheckAvailablePitchesByBranch(Action):
     def name(self) -> str:
         return "action_check_available_pitches_by_branch"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: dict):
         latest_text = tracker.latest_message.get("text", "")
+
+        # NEW: nếu câu có tên sân cụ thể thì chuyển sang action kiểm tra 1 sân
+        pitch_name = extract_pitch_name_from_text(latest_text)
+        if pitch_name:
+            return ActionCheckPitchAvailability().run(dispatcher, tracker, domain)
 
         branch_name = extract_branch_name_from_text(latest_text)
         if not branch_name:
@@ -118,6 +129,10 @@ class ActionCheckAvailablePitchesByBranch(Action):
             dispatcher.utter_message(
                 text="Bạn vui lòng cung cấp ngày đặt, giờ bắt đầu và giờ kết thúc cụ thể."
             )
+            return []
+
+        if datetime_info.get("is_past"):
+            dispatcher.utter_message(text=PAST_TIME_MESSAGE)
             return []
 
         result = get_available_pitches(
@@ -151,6 +166,7 @@ class ActionCheckAvailablePitchesByBranch(Action):
         )
         return []
 
+
 class ActionCheckPitchAvailability(Action):
     def name(self) -> str:
         return "action_check_pitch_availability"
@@ -158,13 +174,11 @@ class ActionCheckPitchAvailability(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: dict):
         latest_text = tracker.latest_message.get("text", "")
 
-        # 1. parse pitch name
         pitch_name = extract_pitch_name_from_text(latest_text)
         if not pitch_name:
             dispatcher.utter_message(text="Bạn muốn kiểm tra sân nào cụ thể?")
             return []
 
-        # 2. parse datetime
         datetime_info = extract_booking_datetime_info(latest_text)
         if not datetime_info["is_complete"]:
             missing_fields = datetime_info["missing_fields"]
@@ -186,7 +200,11 @@ class ActionCheckPitchAvailability(Action):
             )
             return []
 
-        # 3. tìm pitch trong DB
+        # NEW: chặn thời gian trong quá khứ trước khi query DB
+        if datetime_info.get("is_past"):
+            dispatcher.utter_message(text=PAST_TIME_MESSAGE)
+            return []
+
         pitch = get_pitch_by_name(pitch_name)
         if not pitch:
             dispatcher.utter_message(
@@ -197,7 +215,6 @@ class ActionCheckPitchAvailability(Action):
         pitch_id = pitch[0]
         pitch_real_name = pitch[1]
 
-        # 4. check availability
         result = is_pitch_available(
             pitch_id=pitch_id,
             booking_date=datetime_info["booking_date"],
@@ -219,7 +236,7 @@ class ActionCheckPitchAvailability(Action):
         else:
             dispatcher.utter_message(
                 text=(
-                    f"{pitch_real_name} đã được đặt trong khung giờ "
+                    f"{pitch_real_name} đã được đặt hoặc bảo trì trong khung giờ "
                     f"{datetime_info['start_time']} đến {datetime_info['end_time']} "
                     f"ngày {datetime_info['booking_date']}."
                 )

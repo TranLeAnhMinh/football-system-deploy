@@ -7,6 +7,7 @@ intents:
   - ask_branch_list
   - ask_pitches_by_branch
   - ask_available_pitches
+  - ask_booking_guide
   - out_of_scope
   - nlu_fallback
   - ask_pitch_availability
@@ -24,13 +25,16 @@ slots:
 
 responses:
   utter_greet:
-    - text: "Chào bạn, tôi có thể giúp bạn xem chi nhánh, danh sách sân và sân theo từng chi nhánh."
+    - text: "Chào bạn, tôi có thể hướng dẫn bạn cách đặt sân, xem chi nhánh, danh sách sân, sân theo từng chi nhánh và tra cứu giờ trống của sân."
 
   utter_goodbye:
-    - text: "Tạm biệt bạn nhé. Khi nào cần tìm sân bóng thì cứ nhắn tôi."
+    - text: "Tạm biệt bạn nhé. Khi nào cần giúp đỡ thì cứ nhắn tôi."
 
   utter_ask_branch_name:
     - text: "Bạn muốn xem sân ở chi nhánh nào?"
+  
+  utter_booking_guide:
+    - text: "Ở màn hình chính, bạn có thể chọn loại sân bạn muốn đặt, sau đó chọn sân mong muốn và tiến hành đặt sân. Trước khi thanh toán, bạn có thể xem trước các khung giờ đã đặt."
 
   utter_fallback:
     - text: "Tôi chưa hiểu rõ ý bạn. Bạn có thể hỏi về chi nhánh hoặc sân theo chi nhánh."

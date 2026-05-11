@@ -76,6 +76,8 @@ def _weekday_to_index(text: str) -> int | None:
 def _extract_relative_date(text: str, now: datetime | None = None) -> str | None:
     """
     Hỗ trợ:
+    - hôm qua / tối qua / sáng qua / trưa qua / chiều qua
+    - sáng nay / trưa nay / chiều nay / tối nay
     - hôm nay
     - ngày mai / mai
     - ngày mốt / mốt
@@ -89,7 +91,40 @@ def _extract_relative_date(text: str, now: datetime | None = None) -> str | None
     now = now or datetime.now()
     lowered = _normalize_text(text)
 
-    if _match_any_pattern(lowered, [r"\bhôm nay\b", r"\bhom nay\b"]):
+    # NEW: nhận diện các cụm chỉ ngày hôm qua
+    yesterday_patterns = [
+        r"\bhôm qua\b",
+        r"\bhom qua\b",
+        r"\bsáng qua\b",
+        r"\bsang qua\b",
+        r"\btrưa qua\b",
+        r"\btrua qua\b",
+        r"\bchiều qua\b",
+        r"\bchieu qua\b",
+        r"\btối qua\b",
+        r"\btoi qua\b",
+        r"\btoi kia\b",
+        r"\bsang kia\b",
+    ]
+
+    if _match_any_pattern(lowered, yesterday_patterns):
+        return (now - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # NEW: nhận diện các cụm chỉ thời điểm trong ngày hôm nay
+    today_patterns = [
+        r"\bhôm nay\b",
+        r"\bhom nay\b",
+        r"\bsáng nay\b",
+        r"\bsang nay\b",
+        r"\btrưa nay\b",
+        r"\btrua nay\b",
+        r"\bchiều nay\b",
+        r"\bchieu nay\b",
+        r"\btối nay\b",
+        r"\btoi nay\b",
+    ]
+
+    if _match_any_pattern(lowered, today_patterns):
         return now.strftime("%Y-%m-%d")
 
     if _match_any_pattern(lowered, [r"\bngày mai\b", r"\bngay mai\b", r"\bmai\b"]):
@@ -102,7 +137,7 @@ def _extract_relative_date(text: str, now: datetime | None = None) -> str | None
     if weekday_index is None:
         return None
 
-    current_weekday = now.weekday()  # Monday = 0, Sunday = 6
+    current_weekday = now.weekday()
     delta = weekday_index - current_weekday
 
     if _match_any_pattern(lowered, [r"\btuần sau\b", r"\btuan sau\b"]):
@@ -138,46 +173,26 @@ def _normalize_time(hour: int, minute: int) -> str | None:
 def _extract_time_token(token: str) -> str | None:
     token = token.strip().lower()
 
-    # HH:MM
     match = re.fullmatch(r"(\d{1,2}):(\d{2})", token)
     if match:
-        hour = int(match.group(1))
-        minute = int(match.group(2))
-        return _normalize_time(hour, minute)
+        return _normalize_time(int(match.group(1)), int(match.group(2)))
 
-    # HHhMM
     match = re.fullmatch(r"(\d{1,2})h(\d{1,2})", token)
     if match:
-        hour = int(match.group(1))
-        minute = int(match.group(2))
-        return _normalize_time(hour, minute)
+        return _normalize_time(int(match.group(1)), int(match.group(2)))
 
-    # HHh
     match = re.fullmatch(r"(\d{1,2})h", token)
     if match:
-        hour = int(match.group(1))
-        return _normalize_time(hour, 0)
+        return _normalize_time(int(match.group(1)), 0)
 
-    # HH
     match = re.fullmatch(r"(\d{1,2})", token)
     if match:
-        hour = int(match.group(1))
-        return _normalize_time(hour, 0)
+        return _normalize_time(int(match.group(1)), 0)
 
     return None
 
 
 def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | None]:
-    """
-    Hỗ trợ:
-    - 19:30-21:00
-    - 19:30 đến 21:00
-    - 19:30 den 21:00
-    - 19:30 tới 21:00
-    - 19h30-21h
-    - từ 19:30 đến 21:00
-    - 7h30 - 8h15
-    """
     if not text:
         return None, None
 
@@ -192,13 +207,7 @@ def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | No
         if not match:
             continue
 
-        start_raw = match.group(1)
-        end_raw = match.group(2)
-
-        start_time = _extract_time_token(start_raw)
-        end_time = _extract_time_token(end_raw)
-
-        return start_time, end_time
+        return _extract_time_token(match.group(1)), _extract_time_token(match.group(2))
 
     return None, None
 
@@ -219,10 +228,6 @@ def _time_to_minutes(time_str: str) -> int:
 
 
 def is_valid_slot_boundary(time_str: str | None) -> bool:
-    """
-    Slot hợp lệ nếu nằm trên mốc 45 phút tính từ 00:00:
-    00:00, 00:45, 01:30, 02:15, ...
-    """
     if not time_str:
         return False
 
@@ -231,12 +236,6 @@ def is_valid_slot_boundary(time_str: str | None) -> bool:
 
 
 def is_valid_slot_range(start_time: str | None, end_time: str | None) -> tuple[bool, str | None]:
-    """
-    Hợp lệ nếu:
-    - start_time và end_time đều nằm trên mốc slot
-    - end_time > start_time
-    - khoảng thời gian là bội số của 45 phút
-    """
     if not start_time or not end_time:
         return False, "Thiếu giờ bắt đầu hoặc giờ kết thúc."
 
@@ -259,9 +258,7 @@ def is_valid_slot_range(start_time: str | None, end_time: str | None) -> tuple[b
         return False, "Giờ kết thúc phải lớn hơn giờ bắt đầu."
 
     if (end_minutes - start_minutes) % SLOT_MINUTES != 0:
-        return False, (
-            f"Khoảng thời gian phải là bội số của {SLOT_MINUTES} phút."
-        )
+        return False, f"Khoảng thời gian phải là bội số của {SLOT_MINUTES} phút."
 
     return True, None
 
@@ -289,9 +286,20 @@ def extract_booking_datetime_info(
     text: str | None,
     now: datetime | None = None,
 ) -> dict[str, Any]:
+    now = now or datetime.now().replace(second=0, microsecond=0)
+
     booking_date = extract_booking_date(text, now=now)
     start_time, end_time = extract_time_range_from_text(text)
     missing_fields = get_missing_datetime_fields(text, now=now)
+
+    is_past = False
+    if booking_date and start_time:
+        try:
+            dt = datetime.strptime(f"{booking_date} {start_time}", "%Y-%m-%d %H:%M")
+            if dt < now:
+                is_past = True
+        except ValueError:
+            pass
 
     return {
         "booking_date": booking_date,
@@ -299,4 +307,5 @@ def extract_booking_datetime_info(
         "end_time": end_time,
         "missing_fields": missing_fields,
         "is_complete": len(missing_fields) == 0,
+        "is_past": is_past,
     }

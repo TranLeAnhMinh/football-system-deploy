@@ -45,3 +45,8 @@ rules:
   steps:
     - intent: ask_pitch_availability
     - action: action_check_pitch_availability
+
+- rule: guide booking
+  steps:
+    - intent: ask_booking_guide
+    - action: utter_booking_guide

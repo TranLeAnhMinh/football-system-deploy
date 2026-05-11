@@ -108,3 +108,22 @@ nlu:
     - cho tôi hỏi sân A1 ngày mai từ 18:00 đến 18:45 có trống không
     - sân Mỹ Đình có trống không
     - sân này có rảnh không
+    - sân bất kỳ tối nay 18h đến 18h45 còn trống không
+    - sân bất kỳ tối mai 18h đến 18h45 còn trống không
+    - sân bất kỳ hôm nay từ 18:00 đến 18:45 có rảnh không
+    - sân bất kỳ ngày mai từ 18:00 đến 18:45 đặt được không
+    - sân bất kỳ từ 18:00 đến 18:45 còn trống không
+    - cho tôi hỏi sân bất kỳ tối nay 18h đến 18h45 có trống không
+
+- intent: ask_booking_guide
+  examples: |
+    - hướng dẫn tôi cách đặt sân
+    - cách đặt sân như thế nào
+    - làm sao để đặt sân
+    - tôi muốn đặt sân thì làm thế nào
+    - chỉ tôi cách booking sân
+    - hướng dẫn đặt sân
+    - đặt sân kiểu gì
+    - tôi muốn biết cách đặt sân
+    - cách book sân
+    - làm thế nào để book sân bóng
