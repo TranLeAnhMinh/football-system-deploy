@@ -10,6 +10,15 @@ nlu:
     - chào bot
     - alo
     - ê bot
+    - good morning
+    - good afternoon
+    - good evening
+    - hey
+    - hello bot
+    - こんにちは
+    - こんばんは
+    - おはよう
+    - はじめまして
 
 - intent: goodbye
   examples: |
@@ -22,6 +31,14 @@ nlu:
     - cảm ơn nhé bye
     - ok bye
     - chào nha
+    - see you
+    - see you later
+    - thanks bye
+    - thank you goodbye
+    - さようなら
+    - またね
+    - バイバイ
+    - ありがとうございます、さようなら
 
 - intent: ask_branch_count
   examples: |
@@ -30,6 +47,16 @@ nlu:
     - có mấy cơ sở
     - số lượng chi nhánh là bao nhiêu
     - bên mình có bao nhiêu chi nhánh
+    - how many branches are there
+    - how many locations do you have
+    - how many facilities are there
+    - number of branches
+    - total branches
+    - 店舗はいくつありますか
+    - 支店はいくつありますか
+    - 店舗数を教えて
+    - 支店数を教えて
+
 - intent: ask_branch_list
   examples: |
     - có những chi nhánh nào
@@ -38,6 +65,15 @@ nlu:
     - hệ thống có những cơ sở nào
     - cho tôi xem các chi nhánh
     - list các chi nhánh
+    - what branches are available
+    - show me the branch list
+    - list all branches
+    - what locations do you have
+    - show me all locations
+    - 店舗一覧を見せて
+    - 支店一覧を見せて
+    - どんな店舗がありますか
+    - 店舗リストを教えて
 
 - intent: ask_pitches_by_branch
   examples: |
@@ -62,6 +98,97 @@ nlu:
     - có sân nào
     - xem sân giúp tôi
     - cho tôi xem sân
+    - what pitches are available in district 1
+    - show me pitches in district 3
+    - which pitches are in district 7
+    - what pitches does branch district 10 have
+    - show pitches in q1
+    - pitches in q7
+    - what about district 3
+    - show me football pitches
+    - are there any pitches
+    - 第1区にはどんなサッカー場がありますか
+    - 第3区のサッカー場を見せて
+    - 第7区にはサッカー場がありますか
+    - 支店ごとのサッカー場を見たいです
+    - サッカー場一覧を見せて
+    - サッカー場を見たいです
+
+- intent: ask_available_pitches
+  examples: |
+    - quận 1 ngày 2025-09-18 từ 07:00 đến 07:45 còn sân nào
+    - q1 ngày 2025-09-18 từ 07:00 đến 08:30 còn sân nào
+    - chi nhánh quận 3 ngày 2025-09-18 từ 18:00 đến 18:45 còn sân nào
+    - quận 7 hôm nay từ 19:30 đến 20:15 còn sân nào
+    - q10 ngày mai từ 06:00 đến 06:45 còn sân nào
+    - q10 tối mai từ 06:00 đến 06:45 còn sân nào
+    - q10 sáng mai từ 06:00 đến 06:45 còn sân nào
+    - quận 1 ngày 18/09/2025 từ 07:00 đến 07:45 có sân trống không
+    - sân rảnh ở quận 1 ngày 2025-09-18 từ 07:00 đến 07:45
+    - còn sân nào ở quận 3 ngày 2025-09-18 từ 18:00 đến 18:45
+    - quận 1 từ 07:00 đến 07:45 còn sân nào
+    - quận 1 ngày 2025-09-18 còn sân nào
+    - which pitches are available in district 1 on 2025-09-18 from 07:00 to 07:45
+    - are there any available pitches in q1 tomorrow from 06:00 to 06:45
+    - show me available pitches in district 3 from 18:00 to 18:45
+    - available pitches in district 7 today from 19:30 to 20:15
+    - any free pitches in q10 tomorrow morning from 06:00 to 06:45
+    - 第1区で2025-09-18の07:00から07:45まで空いているサッカー場はありますか
+    - 明日06:00から06:45まで第10区で空いているサッカー場はありますか
+    - 第3区で18:00から18:45まで空いているサッカー場を見せて
+    - 今日19:30から20:15まで第7区で空いているサッカー場はありますか
+
+- intent: ask_pitch_availability
+  examples: |
+    - sân Mỹ Đình ngày mai từ 19:30 đến 20:15 có trống không
+    - sân 11 Q1 - C ngày 2025-09-18 từ 07:30 đến 08:15 có rảnh không
+    - cho tôi hỏi sân A1 ngày mai từ 18:00 đến 18:45 có trống không
+    - sân Mỹ Đình có trống không
+    - sân này có rảnh không
+    - sân bất kỳ tối nay 18h đến 18h45 còn trống không
+    - sân bất kỳ tối mai 18h đến 18h45 còn trống không
+    - sân bất kỳ hôm nay từ 18:00 đến 18:45 có rảnh không
+    - sân bất kỳ ngày mai từ 18:00 đến 18:45 đặt được không
+    - sân bất kỳ từ 18:00 đến 18:45 còn trống không
+    - cho tôi hỏi sân bất kỳ tối nay 18h đến 18h45 có trống không
+    - is My Dinh pitch available tomorrow from 19:30 to 20:15
+    - is pitch A1 available tomorrow from 18:00 to 18:45
+    - is this pitch free
+    - is this pitch available
+    - can I book this pitch tomorrow from 18:00 to 18:45
+    - is any pitch available tonight from 18:00 to 18:45
+    - Mỹ Đìnhサッカー場は明日19:30から20:15まで空いていますか
+    - A1サッカー場は明日18:00から18:45まで空いていますか
+    - このサッカー場は空いていますか
+    - 明日18:00から18:45まで予約できますか
+    - 今夜18:00から18:45まで空いているサッカー場はありますか
+
+- intent: ask_booking_guide
+  examples: |
+    - hướng dẫn tôi cách đặt sân
+    - cách đặt sân như thế nào
+    - làm sao để đặt sân
+    - tôi muốn đặt sân thì làm thế nào
+    - chỉ tôi cách booking sân
+    - hướng dẫn đặt sân
+    - đặt sân kiểu gì
+    - tôi muốn biết cách đặt sân
+    - cách book sân
+    - làm thế nào để book sân bóng
+    - how to book a pitch
+    - how can I book a pitch
+    - guide me on how to book a pitch
+    - I want to book a football pitch
+    - how do I make a booking
+    - show me how to book a pitch
+    - booking guide
+    - how does booking work
+    - サッカー場の予約方法を教えて
+    - 予約方法を教えて
+    - どうやって予約しますか
+    - サッカー場を予約したいです
+    - 予約のやり方を教えてください
+    - 予約ガイドを見せてください
 
 - intent: out_of_scope
   examples: |
@@ -84,46 +211,12 @@ nlu:
     - bạn có thể ăn cơm không
     - bạn có người yêu chưa
     - bạn làm được gì ngoài việc này
-
-
-- intent: ask_available_pitches
-  examples: |
-    - quận 1 ngày 2025-09-18 từ 07:00 đến 07:45 còn sân nào
-    - q1 ngày 2025-09-18 từ 07:00 đến 08:30 còn sân nào
-    - chi nhánh quận 3 ngày 2025-09-18 từ 18:00 đến 18:45 còn sân nào
-    - quận 7 hôm nay từ 19:30 đến 20:15 còn sân nào
-    - q10 ngày mai từ 06:00 đến 06:45 còn sân nào
-    - q10 tối mai từ 06:00 đến 06:45 còn sân nào
-    - q10 sáng mai từ 06:00 đến 06:45 còn sân nào
-    - quận 1 ngày 18/09/2025 từ 07:00 đến 07:45 có sân trống không
-    - sân rảnh ở quận 1 ngày 2025-09-18 từ 07:00 đến 07:45
-    - còn sân nào ở quận 3 ngày 2025-09-18 từ 18:00 đến 18:45
-    - quận 1 từ 07:00 đến 07:45 còn sân nào
-    - quận 1 ngày 2025-09-18 còn sân nào
-
-- intent: ask_pitch_availability
-  examples: |
-    - sân Mỹ Đình ngày mai từ 19:30 đến 20:15 có trống không
-    - sân 11 Q1 - C ngày 2025-09-18 từ 07:30 đến 08:15 có rảnh không
-    - cho tôi hỏi sân A1 ngày mai từ 18:00 đến 18:45 có trống không
-    - sân Mỹ Đình có trống không
-    - sân này có rảnh không
-    - sân bất kỳ tối nay 18h đến 18h45 còn trống không
-    - sân bất kỳ tối mai 18h đến 18h45 còn trống không
-    - sân bất kỳ hôm nay từ 18:00 đến 18:45 có rảnh không
-    - sân bất kỳ ngày mai từ 18:00 đến 18:45 đặt được không
-    - sân bất kỳ từ 18:00 đến 18:45 còn trống không
-    - cho tôi hỏi sân bất kỳ tối nay 18h đến 18h45 có trống không
-
-- intent: ask_booking_guide
-  examples: |
-    - hướng dẫn tôi cách đặt sân
-    - cách đặt sân như thế nào
-    - làm sao để đặt sân
-    - tôi muốn đặt sân thì làm thế nào
-    - chỉ tôi cách booking sân
-    - hướng dẫn đặt sân
-    - đặt sân kiểu gì
-    - tôi muốn biết cách đặt sân
-    - cách book sân
-    - làm thế nào để book sân bóng
+    - tell me a joke
+    - write an essay for me
+    - what is the weather today
+    - do you have a girlfriend
+    - can you do math
+    - 今日の天気はどうですか
+    - 冗談を言って
+    - 作文を書いてください
+    - あなたは誰ですか

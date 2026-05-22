@@ -8,12 +8,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!icon || !chatWindow || !closeBtn || !input || !sendBtn || !messages) return;
 
-  const RASA_URL = "http://localhost:5005/webhooks/rest/webhook";
+  const RASA_URL = "/rasa/webhooks/rest/webhook";
   const senderId = "web_user_" + Date.now();
 
-  /* ===============================
-     OPEN / CLOSE
-  =============================== */
+  function getCurrentLanguage() {
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get("lang");
+
+    if (lang === "vi") return "vi";
+    if (lang === "en") return "en";
+    if (lang === "ja") return "ja";
+
+    return "vi";
+  }
+
+  function getTypingText() {
+    const lang = getCurrentLanguage();
+    if (lang === "en") return "Replying...";
+    if (lang === "ja") return "回答中...";
+    return "Đang trả lời...";
+  }
+
+  function getFallbackText() {
+    const lang = getCurrentLanguage();
+    if (lang === "en") return "I don't have a suitable answer yet.";
+    if (lang === "ja") return "適切な回答がまだありません。";
+    return "Tôi chưa có câu trả lời phù hợp.";
+  }
+
+  function getConnectionErrorText() {
+    const lang = getCurrentLanguage();
+    if (lang === "en") return "❌ Cannot connect to the Rasa chatbot.";
+    if (lang === "ja") return "❌ Rasaチャットボットに接続できません。";
+    return "❌ Không thể kết nối tới Rasa chatbot.";
+  }
+
   icon.addEventListener("click", () => {
     chatWindow.classList.toggle("hidden");
   });
@@ -22,9 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     chatWindow.classList.add("hidden");
   });
 
-  /* ===============================
-     DRAG ICON
-  =============================== */
   let isDragging = false;
   let offsetX = 0;
   let offsetY = 0;
@@ -50,9 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
     icon.style.cursor = "grab";
   });
 
-  /* ===============================
-     CHAT LOGIC
-  =============================== */
   function addMessage(text, type) {
     const msg = document.createElement("div");
     msg.className = `msg ${type}`;
@@ -65,12 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const question = input.value.trim();
     if (!question) return;
 
+    const language = getCurrentLanguage();
+
     addMessage(question, "user");
     input.value = "";
 
     const typing = document.createElement("div");
     typing.className = "msg bot";
-    typing.innerText = "Đang trả lời...";
+    typing.innerText = getTypingText();
     messages.appendChild(typing);
     messages.scrollTop = messages.scrollHeight;
 
@@ -82,7 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({
           sender: senderId,
-          message: question
+          message: question,
+          metadata: {
+            language: language
+          }
         })
       });
 
@@ -94,30 +122,23 @@ document.addEventListener("DOMContentLoaded", () => {
       typing.remove();
 
       if (!Array.isArray(data) || data.length === 0) {
-        addMessage("Tôi chưa có câu trả lời phù hợp.", "bot");
+        addMessage(getFallbackText(), "bot");
         return;
       }
 
       data.forEach((item) => {
-        if (item.text) {
-          addMessage(item.text, "bot");
-        }
+        if (item.text) addMessage(item.text, "bot");
       });
     } catch (err) {
       typing.remove();
-      addMessage("❌ Không thể kết nối tới Rasa chatbot.", "bot");
+      addMessage(getConnectionErrorText(), "bot");
       console.error("Chatbot error:", err);
     }
   }
 
-  /* ===============================
-     EVENTS
-  =============================== */
   sendBtn.addEventListener("click", sendMessage);
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
+    if (e.key === "Enter") sendMessage();
   });
 });

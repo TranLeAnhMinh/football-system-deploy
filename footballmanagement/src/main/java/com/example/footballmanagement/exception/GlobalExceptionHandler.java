@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Bad Request")
-                .message("⚠️ Trùng lịch bảo trì hoặc dữ liệu không hợp lệ, vui lòng kiểm tra lại.")
+                .message("Đã có lỗi xảy ra, vui lòng kiểm tra lại.")
                 .timestamp(LocalDateTime.now())
                 .build();
 

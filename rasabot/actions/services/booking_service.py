@@ -18,9 +18,6 @@ TIMEZONE_SUFFIX = "+07"
 
 
 def _parse_time_str(time_str: str) -> tuple[int, int] | None:
-    """
-    Nhận HH:MM, trả về (hour, minute)
-    """
     if not time_str:
         return None
 
@@ -50,11 +47,6 @@ def _minutes_from_midnight(time_str: str) -> int | None:
 
 
 def is_valid_slot_boundary(time_str: str) -> bool:
-    """
-    Mốc giờ phải nằm đúng biên slot 45 phút tính từ 00:00.
-    Ví dụ hợp lệ:
-    00:00, 00:45, 01:30, 02:15, 03:00...
-    """
     total_minutes = _minutes_from_midnight(time_str)
     if total_minutes is None:
         return False
@@ -83,15 +75,6 @@ def validate_booking_input(
     start_time: str | None,
     end_time: str | None,
 ) -> dict[str, Any]:
-    """
-    Validate input theo rule:
-    - phải có ngày
-    - phải có giờ bắt đầu
-    - phải có giờ kết thúc
-    - giờ đúng format HH:MM
-    - đúng biên slot 45 phút
-    - end > start
-    """
     missing_fields: list[str] = []
 
     if not booking_date:
@@ -104,8 +87,8 @@ def validate_booking_input(
     if missing_fields:
         return {
             "ok": False,
+            "error_key": _missing_fields_error_key(missing_fields),
             "missing_fields": missing_fields,
-            "message": _build_missing_fields_message(missing_fields),
         }
 
     try:
@@ -113,84 +96,75 @@ def validate_booking_input(
     except ValueError:
         return {
             "ok": False,
+            "error_key": "invalid_booking_date",
             "missing_fields": [],
-            "message": "Ngày đặt không hợp lệ. Vui lòng nhập theo định dạng YYYY-MM-DD.",
         }
 
     if _parse_time_str(start_time) is None:
         return {
             "ok": False,
+            "error_key": "invalid_start_time_format",
             "missing_fields": [],
-            "message": "Giờ bắt đầu không hợp lệ. Vui lòng nhập theo định dạng HH:MM.",
         }
 
     if _parse_time_str(end_time) is None:
         return {
             "ok": False,
+            "error_key": "invalid_end_time_format",
             "missing_fields": [],
-            "message": "Giờ kết thúc không hợp lệ. Vui lòng nhập theo định dạng HH:MM.",
         }
 
     if not is_valid_slot_boundary(start_time):
         return {
             "ok": False,
+            "error_key": "invalid_start_slot_boundary",
             "missing_fields": [],
-            "message": (
-                "Giờ bắt đầu không hợp lệ. Hệ thống dùng slot 45 phút tính từ 00:00. "
-                "Ví dụ hợp lệ: 00:00, 00:45, 01:30."
-            ),
         }
 
     if not is_valid_slot_boundary(end_time):
         return {
             "ok": False,
+            "error_key": "invalid_end_slot_boundary",
             "missing_fields": [],
-            "message": (
-                "Giờ kết thúc không hợp lệ. Hệ thống dùng slot 45 phút tính từ 00:00. "
-                "Ví dụ hợp lệ: 00:00, 00:45, 01:30."
-            ),
         }
 
     if not is_valid_time_range(start_time, end_time):
         return {
             "ok": False,
+            "error_key": "invalid_time_range",
             "missing_fields": [],
-            "message": (
-                "Khung giờ không hợp lệ. Giờ kết thúc phải lớn hơn giờ bắt đầu "
-                "và khoảng thời gian phải theo bội số 45 phút."
-            ),
         }
 
     return {
         "ok": True,
+        "error_key": None,
         "missing_fields": [],
-        "message": None,
     }
 
 
-def _build_missing_fields_message(missing_fields: list[str]) -> str:
-    field_map = {
-        "booking_date": "ngày đặt",
-        "start_time": "giờ bắt đầu",
-        "end_time": "giờ kết thúc",
-    }
+def _missing_fields_error_key(missing_fields: list[str]) -> str:
+    if missing_fields == ["booking_date"]:
+        return "missing_booking_date"
 
-    readable = [field_map[field] for field in missing_fields]
+    if missing_fields == ["start_time"]:
+        return "missing_start_time"
 
-    if len(readable) == 1:
-        return f"Bạn vui lòng cung cấp {readable[0]} cụ thể."
+    if missing_fields == ["end_time"]:
+        return "missing_end_time"
 
-    if len(readable) == 2:
-        return f"Bạn vui lòng cung cấp {readable[0]} và {readable[1]} cụ thể."
+    if set(missing_fields) == {"booking_date", "start_time"}:
+        return "missing_booking_date_start_time"
 
-    return "Bạn vui lòng cung cấp ngày đặt, giờ bắt đầu và giờ kết thúc cụ thể."
+    if set(missing_fields) == {"booking_date", "end_time"}:
+        return "missing_booking_date_end_time"
+
+    if set(missing_fields) == {"start_time", "end_time"}:
+        return "missing_start_end_time"
+
+    return "missing_datetime"
 
 
 def build_datetime_with_timezone(booking_date: str, time_str: str) -> str:
-    """
-    Trả về dạng:
-    2025-09-18 07:00:00+07
-    """
     return f"{booking_date} {time_str}:00{TIMEZONE_SUFFIX}"
 
 
@@ -200,19 +174,11 @@ def get_available_pitches(
     end_time: str,
     booking_date: str | None = None,
 ) -> dict[str, Any]:
-    """
-    Trả về dict để action xử lý dễ hơn:
-    {
-        "ok": True/False,
-        "message": "...",
-        "data": [...]
-    }
-    """
     validation = validate_booking_input(booking_date, start_time, end_time)
     if not validation["ok"]:
         return {
             "ok": False,
-            "message": validation["message"],
+            "error_key": validation["error_key"],
             "data": [],
         }
 
@@ -220,7 +186,7 @@ def get_available_pitches(
     if not normalized_branch_name:
         return {
             "ok": False,
-            "message": "Bạn vui lòng cung cấp tên chi nhánh hợp lệ.",
+            "error_key": "invalid_branch_name",
             "data": [],
         }
 
@@ -260,6 +226,7 @@ def get_available_pitches(
 
     conn = None
     cursor = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -278,8 +245,14 @@ def get_available_pitches(
 
         return {
             "ok": True,
-            "message": None,
+            "error_key": None,
             "data": rows,
+        }
+    except Exception:
+        return {
+            "ok": False,
+            "error_key": "database_error",
+            "data": [],
         }
     finally:
         if cursor:
@@ -294,14 +267,11 @@ def is_pitch_available(
     start_time: str | None,
     end_time: str | None,
 ) -> dict[str, Any]:
-    """
-    Check 1 sân cụ thể có rảnh không.
-    """
     validation = validate_booking_input(booking_date, start_time, end_time)
     if not validation["ok"]:
         return {
             "ok": False,
-            "message": validation["message"],
+            "error_key": validation["error_key"],
             "available": False,
         }
 
@@ -336,6 +306,7 @@ def is_pitch_available(
 
     conn = None
     cursor = None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -355,14 +326,21 @@ def is_pitch_available(
         if row:
             return {
                 "ok": True,
-                "message": None,
+                "error_key": None,
                 "available": True,
                 "data": row,
             }
 
         return {
             "ok": True,
-            "message": None,
+            "error_key": None,
+            "available": False,
+            "data": None,
+        }
+    except Exception:
+        return {
+            "ok": False,
+            "error_key": "database_error",
             "available": False,
             "data": None,
         }

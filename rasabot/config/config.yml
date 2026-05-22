@@ -3,25 +3,34 @@ version: "3.1"
 language: vi
 
 pipeline:
-- name: WhitespaceTokenizer
-- name: RegexFeaturizer
-- name: LexicalSyntacticFeaturizer
-- name: CountVectorsFeaturizer
-- name: DIETClassifier
-  epochs: 100
-  constrain_similarities: true
-- name: EntitySynonymMapper
-- name: FallbackClassifier
-  threshold: 0.6
-  ambiguity_threshold: 0.1
+  - name: WhitespaceTokenizer
+
+  - name: RegexFeaturizer
+
+  - name: LexicalSyntacticFeaturizer
+
+  - name: CountVectorsFeaturizer
+
+  - name: DIETClassifier
+    epochs: 100
+    constrain_similarities: true
+
+  - name: EntitySynonymMapper
+
+  - name: FallbackClassifier
+    threshold: 0.6
+    ambiguity_threshold: 0.1
 
 policies:
-- name: RulePolicy
-  core_fallback_threshold: 0.4
-  core_fallback_action_name: "utter_fallback"
-  enable_fallback_prediction: true
-- name: MemoizationPolicy
-- name: TEDPolicy
-  epochs: 100
-  constrain_similarities: true
+  - name: RulePolicy
+    core_fallback_threshold: 0.4
+    core_fallback_action_name: "action_fallback"
+    enable_fallback_prediction: true
+
+  - name: MemoizationPolicy
+
+  - name: TEDPolicy
+    epochs: 100
+    constrain_similarities: true
+
 assistant_id: 20260325-155851-senile-truss
