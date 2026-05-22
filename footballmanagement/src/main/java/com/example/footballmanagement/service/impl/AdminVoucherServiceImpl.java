@@ -1,5 +1,6 @@
 package com.example.footballmanagement.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,28 +41,69 @@ public class AdminVoucherServiceImpl implements AdminVoucherService {
         }
 
         /* ================= BUSINESS VALIDATION ================= */
+        validateVoucherPayload(voucher);
 
-        // ❌ Trùng code
         if (voucherRepo.existsByCode(voucher.getCode())) {
             throw new VoucherException(ErrorCode.VOUCHER_CODE_EXISTS);
-        }
-
-        // ❌ Sai thời gian
-        if (voucher.getStartAt() != null && voucher.getEndAt() != null
-                && voucher.getStartAt().isAfter(voucher.getEndAt())) {
-            throw new VoucherException(ErrorCode.VOUCHER_INVALID_TIME);
-        }
-
-        // ❌ Percent mà value > 100
-        if (voucher.getType() == VoucherType.PERCENT
-                && voucher.getValue().intValue() > 100) {
-            throw new VoucherException(ErrorCode.VOUCHER_PERCENT_INVALID);
         }
 
         /* ================= DEFAULT FIELDS ================= */
         voucher.setActive(true);
 
         return voucherRepo.save(voucher);
+    }
+
+    /**
+     * Kiểm tra toàn bộ ràng buộc nghiệp vụ của 1 voucher trước khi lưu.
+     * Tách riêng để tái sử dụng cho create/update sau này.
+     */
+    private void validateVoucherPayload(Voucher voucher) {
+        // 1) Field bắt buộc
+        if (voucher.getCode() == null || voucher.getCode().isBlank()) {
+            throw new VoucherException(ErrorCode.VOUCHER_CODE_REQUIRED);
+        }
+        if (voucher.getType() == null) {
+            throw new VoucherException(ErrorCode.VOUCHER_TYPE_REQUIRED);
+        }
+        if (voucher.getValue() == null) {
+            throw new VoucherException(ErrorCode.VOUCHER_VALUE_REQUIRED);
+        }
+
+        // 2) value phải > 0 (cấm âm và 0 — voucher giá trị 0 vô nghĩa
+        //    và voucher giá trị âm sẽ LÀM TĂNG giá khi áp vào booking)
+        if (voucher.getValue().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new VoucherException(ErrorCode.VOUCHER_VALUE_NOT_POSITIVE);
+        }
+
+        // 3) PERCENT: 1 <= value <= 100 (so sánh BigDecimal, không dùng intValue
+        //    vì 100.5 sẽ bị truncate thành 100 và lọt qua)
+        if (voucher.getType() == VoucherType.PERCENT
+                && voucher.getValue().compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new VoucherException(ErrorCode.VOUCHER_PERCENT_INVALID);
+        }
+
+        // 4) maxDiscount không được âm (null = không giới hạn, OK)
+        if (voucher.getMaxDiscount() != null
+                && voucher.getMaxDiscount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new VoucherException(ErrorCode.VOUCHER_MAX_DISCOUNT_NEGATIVE);
+        }
+
+        // 5) minOrder không được âm
+        if (voucher.getMinOrder() != null
+                && voucher.getMinOrder().compareTo(BigDecimal.ZERO) < 0) {
+            throw new VoucherException(ErrorCode.VOUCHER_MIN_ORDER_NEGATIVE);
+        }
+
+        // 6) perUserLimit nếu có phải >= 1
+        if (voucher.getPerUserLimit() != null && voucher.getPerUserLimit() < 1) {
+            throw new VoucherException(ErrorCode.VOUCHER_PER_USER_LIMIT_INVALID);
+        }
+
+        // 7) Khoảng thời gian: start phải TRƯỚC end (không cho phép bằng)
+        if (voucher.getStartAt() != null && voucher.getEndAt() != null
+                && !voucher.getStartAt().isBefore(voucher.getEndAt())) {
+            throw new VoucherException(ErrorCode.VOUCHER_INVALID_TIME);
+        }
     }
     @Override
 public void deleteVoucher(UUID voucherId, UUID currentUserId) {
