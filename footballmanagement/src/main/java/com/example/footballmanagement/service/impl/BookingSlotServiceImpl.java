@@ -35,45 +35,61 @@ public class BookingSlotServiceImpl implements BookingSlotService {
         "22:30", "23:15"
     );
 
-    @Override
-    @Transactional
-    public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking booking) {
-        UUID pitchId = booking.getPitch().getId();
+@Override
+@Transactional
+public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking booking) {
+    UUID pitchId = booking.getPitch().getId();
+    OffsetDateTime now = OffsetDateTime.now();
 
-        List<BookingSlot> slots = requests.stream()
-                .map(req -> {
-                    if (req.getStartAt().isAfter(req.getEndAt())) {
-                        throw new IllegalArgumentException("Start time must be before end time");
-                    }
+    List<BookingSlot> slots = requests.stream()
+            .map(req -> {
 
-                String startStr = req.getStartAt().toLocalTime().withSecond(0).withNano(0).toString();
-                String endStr   = req.getEndAt().toLocalTime().withSecond(0).withNano(0).toString();
+                // Chặn đặt slot trong quá khứ
+                if (req.getStartAt().isBefore(now) || req.getEndAt().isBefore(now)) {
+                    throw new IllegalArgumentException("Không thể đặt sân ở thời gian trong quá khứ");
+                }
 
-                    if (!ALLOWED_TIMES.contains(startStr) || !ALLOWED_TIMES.contains(endStr)) {
-                        throw new IllegalArgumentException("Invalid slot time. Allowed times: " + ALLOWED_TIMES);
-                    }
+                // Chặn start >= end
+                if (!req.getStartAt().isBefore(req.getEndAt())) {
+                    throw new IllegalArgumentException("Start time must be before end time");
+                }
 
-                    // ✅ check overlap (PENDING, APPROVED)
-                    if (existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
-                        throw new IllegalArgumentException("Slot overlaps with another booking");
-                    }
+                String startStr = req.getStartAt()
+                        .toLocalTime()
+                        .withSecond(0)
+                        .withNano(0)
+                        .toString();
 
-                    // ✅ check maintenance
-                    if (maintenanceWindowService.existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
-                        throw new IllegalArgumentException("Pitch is under maintenance in this period");
-                    }
+                String endStr = req.getEndAt()
+                        .toLocalTime()
+                        .withSecond(0)
+                        .withNano(0)
+                        .toString();
 
-                    return BookingSlot.builder()
+                if (!ALLOWED_TIMES.contains(startStr) || !ALLOWED_TIMES.contains(endStr)) {
+                    throw new IllegalArgumentException("Invalid slot time. Allowed times: " + ALLOWED_TIMES);
+                }
+
+                if (existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
+                    throw new IllegalArgumentException("Slot overlaps with another booking");
+                }
+
+                if (maintenanceWindowService.existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
+                    throw new IllegalArgumentException("Pitch is under maintenance in this period");
+                }
+
+                return BookingSlot.builder()
                         .booking(booking)
                         .pitch(booking.getPitch())
                         .startAt(req.getStartAt())
                         .endAt(req.getEndAt())
                         .build();
-                })
-                .toList();
+            })
+            .toList();
 
-        return slots;   
-    }
+    return slots;
+}
+
     @Override
     public boolean existsOverlap(UUID pitchId, OffsetDateTime startAt, OffsetDateTime endAt) {
         return slotRepo.existsOverlap(pitchId, startAt, endAt);

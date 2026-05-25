@@ -54,13 +54,18 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
     }
 
     @Override
-    public List<MaintenanceWindowResponse> getMaintenanceWindows(UUID pitchId, OffsetDateTime from, OffsetDateTime to) {
+    public List<MaintenanceWindowResponse> getMaintenanceWindows(
+            UUID pitchId,
+            OffsetDateTime from,
+            OffsetDateTime to
+    ) {
         if (from != null && to != null) {
             return maintenanceRepo.findByPitch_IdAndEndAtAfterAndStartAtBefore(pitchId, from, to)
                     .stream()
                     .map(ConverterUtil::toMaintenanceWindowResponse)
                     .collect(Collectors.toList());
         }
+
         return maintenanceRepo.findByPitch_Id(pitchId)
                 .stream()
                 .map(ConverterUtil::toMaintenanceWindowResponse)
@@ -79,48 +84,56 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
     public MaintenanceWindowResponse createMaintenanceWindow(UUID adminId, MaintenanceWindowRequest req) {
         log.info("🔥 [MAIN THREAD] Processing maintenance on thread: {}", Thread.currentThread().getName());
 
-        // 1️⃣ Lấy user hiện tại
         User currentUser = userRepo.findById(adminId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
-        // 2️⃣ Chỉ cho phép ADMIN_BRANCH + ACTIVE
-        if (currentUser.getRole() != UserRole.ADMIN_BRANCH)
-            throw new ApiException(ErrorCode.PERMISSION_DENIED);
-        if (currentUser.getStatus() != UserStatus.ACTIVE)
-            throw new ApiException(ErrorCode.USER_INACTIVE);
+        validateMaintenanceTime(req);
 
-        // 3️⃣ Lấy pitch
-        Pitch pitch = pitchRepo.findById(req.getPitchId())
-                .orElseThrow(() -> new ApiException(ErrorCode.PITCH_NOT_FOUND));
-
-        // 4️⃣ Kiểm tra quyền sở hữu sân (phải là admin của branch đó)
-        if (pitch.getBranch() == null ||
-            pitch.getBranch().getAdmin() == null ||
-            !pitch.getBranch().getAdmin().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() != UserRole.ADMIN_BRANCH) {
             throw new ApiException(ErrorCode.PERMISSION_DENIED);
         }
 
-        // 5️⃣ Kiểm tra trùng maintenance
-        boolean conflictMaint = maintenanceRepo.existsOverlap(req.getPitchId(), req.getStartAt(), req.getEndAt());
-        if (conflictMaint) throw new ApiException(ErrorCode.MAINTENANCE_CONFLICT);
+        if (currentUser.getStatus() != UserStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.USER_INACTIVE);
+        }
 
-        // 6️⃣ Tìm booking APPROVED trùng thời gian
+        Pitch pitch = pitchRepo.findById(req.getPitchId())
+                .orElseThrow(() -> new ApiException(ErrorCode.PITCH_NOT_FOUND));
+
+        if (pitch.getBranch() == null ||
+                pitch.getBranch().getAdmin() == null ||
+                !pitch.getBranch().getAdmin().getId().equals(currentUser.getId())) {
+            throw new ApiException(ErrorCode.PERMISSION_DENIED);
+        }
+
+        boolean conflictMaint = maintenanceRepo.existsOverlap(
+                req.getPitchId(),
+                req.getStartAt(),
+                req.getEndAt()
+        );
+
+        if (conflictMaint) {
+            throw new ApiException(ErrorCode.MAINTENANCE_CONFLICT);
+        }
+
         var overlappedSlots = bookingSlotRepo.findApprovedByPitch_IdAndRange(
-                req.getPitchId(), req.getStartAt(), req.getEndAt());
+                req.getPitchId(),
+                req.getStartAt(),
+                req.getEndAt()
+        );
 
         List<Booking> affectedBookings = new ArrayList<>();
+
         if (!overlappedSlots.isEmpty()) {
             affectedBookings = overlappedSlots.stream()
                     .map(slot -> slot.getBooking())
                     .distinct()
                     .toList();
 
-            // ✅ Cập nhật trạng thái booking sang WAITING_REFUND
-            affectedBookings.forEach(b -> b.setStatus(BookingStatus.WAITING_REFUND));
+            affectedBookings.forEach(booking -> booking.setStatus(BookingStatus.WAITING_REFUND));
             bookingRepo.saveAll(affectedBookings);
         }
 
-        // 7️⃣ Tạo mới maintenance window
         MaintenanceWindow window = MaintenanceWindow.builder()
                 .pitch(pitch)
                 .startAt(req.getStartAt())
@@ -130,10 +143,8 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
 
         maintenanceRepo.save(window);
 
-        // ✅ Trả response ngay
         MaintenanceWindowResponse response = ConverterUtil.toMaintenanceWindowResponse(window);
 
-        // ✅ Sau khi transaction commit xong -> gửi mail async
         if (!affectedBookings.isEmpty()) {
             List<Booking> finalAffectedBookings = affectedBookings;
 
@@ -141,12 +152,22 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
                 @Override
                 public void afterCommit() {
                     log.info("Bắt đầu gửi email bảo trì async cho {} booking", finalAffectedBookings.size());
+
                     finalAffectedBookings.forEach(booking -> {
                         try {
                             emailTemplateService.sendMaintenanceRefundNotice(
-                                    booking, pitch, req.getStartAt(), req.getEndAt(), req.getReason());
+                                    booking,
+                                    pitch,
+                                    req.getStartAt(),
+                                    req.getEndAt(),
+                                    req.getReason()
+                            );
                         } catch (Exception e) {
-                            log.error("❌ Lỗi khi gửi mail async cho booking {}: {}", booking.getId(), e.getMessage());
+                            log.error(
+                                    "❌ Lỗi khi gửi mail async cho booking {}: {}",
+                                    booking.getId(),
+                                    e.getMessage()
+                            );
                         }
                     });
                 }
@@ -155,19 +176,35 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
 
         return response;
     }
+
+    private void validateMaintenanceTime(MaintenanceWindowRequest req) {
+        if (req.getStartAt() == null || req.getEndAt() == null) {
+            throw new ApiException(ErrorCode.INVALID_MAINTENANCE_TIME);
+        }
+
+        if (!req.getStartAt().isBefore(req.getEndAt())) {
+            throw new ApiException(ErrorCode.INVALID_MAINTENANCE_TIME);
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        if (req.getStartAt().isBefore(now) || req.getEndAt().isBefore(now)) {
+            throw new ApiException(ErrorCode.MAINTENANCE_TIME_IN_PAST);
+        }
+    }
+
     @Override
     public List<BookingOverlapResponse> checkOverlap(UUID pitchId, OffsetDateTime startAt, OffsetDateTime endAt) {
         var overlappedSlots = bookingSlotRepo.findOverlappedSlots(pitchId, startAt, endAt);
 
-    // map sang DTO trả về FE
-    return overlappedSlots.stream()
-        .map(slot -> BookingOverlapResponse.builder()
-            .bookingId(slot.getBooking().getId())
-            .userName(slot.getBooking().getUser().getFullName())
-            .startAt(slot.getStartAt())
-            .endAt(slot.getEndAt())
-            .status(slot.getBooking().getStatus().name())
-            .build())
-        .toList();
+        return overlappedSlots.stream()
+                .map(slot -> BookingOverlapResponse.builder()
+                        .bookingId(slot.getBooking().getId())
+                        .userName(slot.getBooking().getUser().getFullName())
+                        .startAt(slot.getStartAt())
+                        .endAt(slot.getEndAt())
+                        .status(slot.getBooking().getStatus().name())
+                        .build())
+                .toList();
     }
 }

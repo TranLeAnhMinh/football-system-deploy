@@ -52,7 +52,12 @@ VOUCHER_ALREADY_INACTIVE(HttpStatus.BAD_REQUEST, "Voucher is already inactive"),
 ACTION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "Action is not allowed"),
 UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Update failed"),
 BRANCH_ALREADY_HAVE_ADMIN(HttpStatus.BAD_REQUEST, "Branch already has admin"),
+BOOKING_TIME_IN_PAST(HttpStatus.BAD_REQUEST, "Không thể đặt sân ở thời gian trong quá khứ"),
+INVALID_BOOKING_TIME(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu phải trước thời gian kết thúc"),
+MAINTENANCE_TIME_IN_PAST(HttpStatus.BAD_REQUEST, "Không thể tạo lịch bảo trì trong quá khứ"),
+INVALID_MAINTENANCE_TIME(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu phải trước thời gian kết thúc"),
 VOUCHER_ALREADY_USED(HttpStatus.BAD_REQUEST, "Voucher has already been used and cannot be deleted");
+
 
 
     
