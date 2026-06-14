@@ -349,3 +349,182 @@ def is_pitch_available(
             cursor.close()
         if conn:
             conn.close()
+
+def get_nearest_available_slots_for_pitch(
+    pitch_id: str,
+    booking_date: str,
+    requested_start_time: str,
+    max_slots: int = 8,
+) -> dict[str, Any]:
+    start_minutes = ceil_to_next_slot_minutes(requested_start_time)
+
+    if start_minutes is None:
+        return {
+            "ok": False,
+            "error_key": "invalid_start_time_format",
+            "data": [],
+        }
+
+    available_slots = []
+
+    for i in range(max_slots):
+        slot_start_minutes = start_minutes + i * SLOT_MINUTES
+        slot_end_minutes = slot_start_minutes + SLOT_MINUTES
+
+        if slot_end_minutes > 24 * 60:
+            break
+
+        slot_start = minutes_to_time_str(slot_start_minutes)
+        slot_end = minutes_to_time_str(slot_end_minutes)
+
+        result = is_pitch_available(
+            pitch_id=pitch_id,
+            booking_date=booking_date,
+            start_time=slot_start,
+            end_time=slot_end,
+        )
+
+        if not result["ok"]:
+            return {
+                  "ok": False,
+                  "error_key": result["error_key"],
+                  "data": [],
+            }
+        if result["available"]: 
+            available_slots.append((slot_start_minutes, slot_end_minutes))
+
+    merged_slots = merge_available_slots(available_slots)
+
+    return {
+        "ok": True,
+        "error_key": None,
+        "data": [
+            {
+                "start_time": minutes_to_time_str(start),
+                "end_time": minutes_to_time_str(end),
+            }
+            for start, end in merged_slots
+        ],
+    }
+
+def ceil_to_next_slot_minutes(time_str: str) -> int | None:
+    total_minutes = _minutes_from_midnight(time_str)
+
+    if total_minutes is None:
+        return None
+
+    if total_minutes % SLOT_MINUTES == 0:
+        return total_minutes
+
+    return ((total_minutes // SLOT_MINUTES) + 1) * SLOT_MINUTES
+
+
+def minutes_to_time_str(total_minutes: int) -> str:
+    hour = total_minutes // 60
+    minute = total_minutes % 60
+    return f"{hour:02d}:{minute:02d}"
+
+
+def merge_available_slots(slots: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    if not slots:
+        return []
+
+    merged = [slots[0]]
+
+    for start, end in slots[1:]:
+        last_start, last_end = merged[-1]
+
+        if start == last_end:
+            merged[-1] = (last_start, end)
+        else:
+            merged.append((start, end))
+
+    return merged
+
+def floor_to_slot_minutes(time_str: str) -> int | None:
+    total_minutes = _minutes_from_midnight(time_str)
+
+    if total_minutes is None:
+        return None
+
+    return (total_minutes // SLOT_MINUTES) * SLOT_MINUTES
+
+
+def get_available_slots_in_time_range_for_pitch(
+    pitch_id: str,
+    booking_date: str,
+    requested_start_time: str,
+    requested_end_time: str,
+) -> dict[str, Any]:
+    start_minutes = floor_to_slot_minutes(requested_start_time)
+    end_minutes = ceil_to_next_slot_minutes(requested_end_time)
+
+    if start_minutes is None:
+        return {
+            "ok": False,
+            "error_key": "invalid_start_time_format",
+            "data": [],
+        }
+
+    if end_minutes is None:
+        return {
+            "ok": False,
+            "error_key": "invalid_end_time_format",
+            "data": [],
+        }
+
+    if end_minutes <= start_minutes:
+        return {
+            "ok": False,
+            "error_key": "invalid_time_range",
+            "data": [],
+        }
+
+    available_slots = []
+
+    current_minutes = start_minutes
+
+    while current_minutes < end_minutes:
+        slot_start_minutes = current_minutes
+        slot_end_minutes = current_minutes + SLOT_MINUTES
+
+        if slot_end_minutes > 24 * 60:
+            break
+
+        slot_start = minutes_to_time_str(slot_start_minutes)
+        slot_end = minutes_to_time_str(slot_end_minutes)
+
+        result = is_pitch_available(
+            pitch_id=pitch_id,
+            booking_date=booking_date,
+            start_time=slot_start,
+            end_time=slot_end,
+        )
+
+        if not result["ok"]:
+            return {
+                "ok": False,
+                "error_key": result["error_key"],
+                "data": [],
+            }
+
+        if result["available"]:
+            available_slots.append((slot_start_minutes, slot_end_minutes))
+
+        current_minutes += SLOT_MINUTES
+
+    merged_slots = merge_available_slots(available_slots)
+
+    return {
+        "ok": True,
+        "error_key": None,
+        "rounded_start_time": minutes_to_time_str(start_minutes),
+        "rounded_end_time": minutes_to_time_str(end_minutes),
+        "data": [
+            {
+                "start_time": minutes_to_time_str(start),
+                "end_time": minutes_to_time_str(end),
+            }
+            for start, end in merged_slots
+        ],
+    }

@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
     <link rel="stylesheet" th:href="@{/css/pitches.css}">
+    <link rel="stylesheet" th:href="@{/css/footer.css}">
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
@@ -15,7 +16,6 @@
 
 <div class="home-container">
 
-    <!-- Language switcher -->
     <div class="lang-switcher">
         <div class="lang-dropdown" th:with="currentLang=${#locale.language}">
             <button class="lang-btn" id="langBtn">
@@ -34,19 +34,15 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <div th:replace="layouts/sidebar :: sidebar"></div>
 
-    <!-- Main content -->
     <div class="main-content">
 
-        <!-- Flash messages -->
         <div id="flash-success" th:text="${successMessage}" style="display:none;"></div>
         <div id="flash-error" th:text="${errorMessage}" style="display:none;"></div>
 
         <h2 th:text="#{homepage.pitches}">Pitches</h2>
 
-        <!-- Grid pitches -->
         <div class="pitches">
             <div class="pitch-card" onclick="loadBranches(5)">
                 <img th:src="@{/images/metropolitano.jpg}" alt="5-pitch">
@@ -66,22 +62,13 @@
 
         <div id="branchContainer"></div>
 
-        <!-- Team posts -->
-        <!-- <h2 th:text="#{homepage.posts}">Team posts</h2>
-        <div class="team-posts">
-            <div class="post-card">
-                <span th:text="#{homepage.posts.placeholder}">
-                    Đây là khu vực hiển thị các bài đăng tìm đối.
-                </span>
-            </div>
-        </div> -->
+        <div th:replace="layouts/footer :: footer"></div>
+
     </div>
 </div>
 
-<!-- ================= CHATBOT (FLOATING) ================= -->
 <div th:replace="fragments/chatbot :: chatbot"></div>
 
-<!-- ================= TOAST ================= -->
 <div id="toast-container"></div>
 
 <script th:inline="javascript">

@@ -26,16 +26,9 @@ def _extract_date(text: str) -> str | None:
         return None
 
     patterns = [
-        # yyyy-mm-dd / yyyy/mm/dd
         ("ymd", r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b"),
-
-        # dd-mm-yyyy / dd/mm/yyyy
         ("dmy", r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b"),
-
-        # yyyy年mm月dd日
         ("ymd_ja", r"(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日"),
-
-        # mm/dd/yyyy - English style, fallback only
         ("mdy", r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b"),
     ]
 
@@ -117,15 +110,6 @@ def _weekday_to_index(text: str) -> int | None:
 
 
 def _extract_relative_date(text: str, now: datetime | None = None) -> str | None:
-    """
-    Hỗ trợ:
-    - hôm qua / yesterday / 昨日
-    - hôm nay / today / 今日
-    - ngày mai / tomorrow / 明日
-    - ngày mốt / day after tomorrow / 明後日
-    - thứ X tuần này / this Monday / 今週の月曜日
-    - thứ X tuần sau / next Monday / 来週の月曜日
-    """
     if not text:
         return None
 
@@ -232,11 +216,11 @@ def _extract_time_token(token: str) -> str | None:
     if match:
         return _normalize_time(int(match.group(1)), int(match.group(2)))
 
-    match = re.fullmatch(r"(\d{1,2})h(\d{1,2})", token)
+    match = re.fullmatch(r"(\d{1,2})[hg](\d{1,2})", token)
     if match:
         return _normalize_time(int(match.group(1)), int(match.group(2)))
 
-    match = re.fullmatch(r"(\d{1,2})h", token)
+    match = re.fullmatch(r"(\d{1,2})[hg]", token)
     if match:
         return _normalize_time(int(match.group(1)), 0)
 
@@ -252,17 +236,26 @@ def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | No
         return None, None
 
     lowered = _normalize_text(text)
-    lowered = lowered.replace("〜", "-").replace("～", "-")
+    lowered = (
+        lowered
+        .replace("〜", "-")
+        .replace("～", "-")
+        .replace("–", "-")
+        .replace("—", "-")
+        .replace("−", "-")
+    )
+
+    time_token_pattern = r"\d{1,2}(?::\d{2}|[hg]\d{1,2}|[hg]|時\d{1,2}分?|時)?"
 
     patterns = [
-        # Vietnamese: từ 18:00 đến 18:45
-        r"(?:\btừ\b\s*)?(\d{1,2}(?::\d{2}|h\d{1,2}|h|時\d{1,2}分?|時)?)\s*(?:\-|\bđến\b|\bden\b|\btới\b|\btoi\b|\bto\b)\s*(\d{1,2}(?::\d{2}|h\d{1,2}|h|時\d{1,2}分?|時)?)",
+        # Vietnamese: từ 18:00 đến 18:45 / 18h-20h / 7g-9g
+        rf"(?:\btừ\b\s*)?({time_token_pattern})\s*(?:-|\bđến\b|\bden\b|\btới\b|\btoi\b|\bto\b)\s*({time_token_pattern})",
 
-        # English: from 18:00 to 18:45
-        r"(?:\bfrom\b\s*)?(\d{1,2}(?::\d{2}|h\d{1,2}|h|時\d{1,2}分?|時)?)\s*(?:\-|\bto\b|\buntil\b)\s*(\d{1,2}(?::\d{2}|h\d{1,2}|h|時\d{1,2}分?|時)?)",
+        # English: from 18:00 to 18:45 / 7am to 9am chưa xử lý am-pm, chỉ giữ dạng số
+        rf"(?:\bfrom\b\s*)?({time_token_pattern})\s*(?:-|\bto\b|\buntil\b)\s*({time_token_pattern})",
 
-        # Japanese: 18時から18時45分まで
-        r"(\d{1,2}(?:時\d{1,2}分?|時|:\d{2}))\s*(?:から|-)\s*(\d{1,2}(?:時\d{1,2}分?|時|:\d{2}))\s*(?:まで)?",
+        # Japanese: 18時から18時45分まで / 7時-9時
+        rf"({time_token_pattern})\s*(?:から|-)\s*({time_token_pattern})\s*(?:まで)?",
     ]
 
     for pattern in patterns:

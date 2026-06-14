@@ -1,6 +1,10 @@
 from rasa_sdk import Action, Tracker
+from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
+from actions.services.booking_service import get_available_slots_in_time_range_for_pitch
+from actions.services.booking_service import get_nearest_available_slots_for_pitch
+from actions.services.booking_service import is_valid_slot_boundary
 from actions.parsers.pitch_parser import extract_pitch_name_from_text
 from actions.services.pitch_service import get_pitch_by_name
 from actions.services.booking_service import is_pitch_available
@@ -349,15 +353,85 @@ class ActionCheckAvailablePitchesByBranch(Action):
             dispatcher.utter_message(text=msg(tracker, "past_time"))
             return []
 
+        booking_date = datetime_info["booking_date"]
+        start_time = datetime_info["start_time"]
+        end_time = datetime_info["end_time"]
+
+        # Nếu người dùng hỏi theo chi nhánh nhưng giờ không đúng slot 45 phút,
+        # bot sẽ gợi ý các khung giờ trống theo từng sân trong chi nhánh.
+        if not is_valid_slot_boundary(start_time) or not is_valid_slot_boundary(end_time):
+            pitches = get_pitches_by_branch_name(normalized_branch_name)
+
+            if not pitches:
+                dispatcher.utter_message(text=msg(tracker, "branch_not_found"))
+                return []
+
+            response_lines = []
+            rounded_start_time = None
+            rounded_end_time = None
+
+            for pitch in pitches:
+                pitch_id = pitch[0]
+                pitch_name = pitch[1]
+
+                result = get_available_slots_in_time_range_for_pitch(
+                    pitch_id=pitch_id,
+                    booking_date=booking_date,
+                    requested_start_time=start_time,
+                    requested_end_time=end_time,
+                )
+
+                if not result["ok"]:
+                    dispatcher.utter_message(text=msg(tracker, result["error_key"]))
+                    return []
+
+                rounded_start_time = result["rounded_start_time"]
+                rounded_end_time = result["rounded_end_time"]
+
+                slots = result["data"]
+                if not slots:
+                    continue
+
+                slot_text = ", ".join(
+                    [
+                        f"{slot['start_time']} đến {slot['end_time']}"
+                        for slot in slots
+                    ]
+                )
+
+                response_lines.append(f"- {pitch_name}: {slot_text}")
+
+            if not response_lines:
+                dispatcher.utter_message(
+                    text=(
+                        f"Hệ thống đặt sân theo slot 45 phút.\n"
+                        f"Khung giờ bạn nhập ({start_time} đến {end_time}) không đúng slot hợp lệ.\n\n"
+                        f"Khung giờ hợp lệ gần nhất là {rounded_start_time} đến {rounded_end_time}.\n"
+                        f"Hiện không có sân trống ở {normalized_branch_name} trong khung giờ này."
+                    )
+                )
+                return []
+
+            dispatcher.utter_message(
+                text=(
+                    f"Hệ thống đặt sân theo slot 45 phút.\n"
+                    f"Khung giờ bạn nhập ({start_time} đến {end_time}) không đúng slot hợp lệ.\n\n"
+                    f"Khung giờ hợp lệ gần nhất là {rounded_start_time} đến {rounded_end_time}.\n"
+                    f"Các sân trống ở {normalized_branch_name} ngày {booking_date} là:\n"
+                    + "\n".join(response_lines)
+                )
+            )
+            return []
+
         result = get_available_pitches(
             branch_name=normalized_branch_name,
-            booking_date=datetime_info["booking_date"],
-            start_time=datetime_info["start_time"],
-            end_time=datetime_info["end_time"],
+            booking_date=booking_date,
+            start_time=start_time,
+            end_time=end_time,
         )
 
         if not result["ok"]:
-            dispatcher.utter_message("error_key", "database_error")
+            dispatcher.utter_message(text=msg(tracker, result["error_key"]))
             return []
 
         pitches = result["data"]
@@ -367,9 +441,9 @@ class ActionCheckAvailablePitchesByBranch(Action):
                     tracker,
                     "no_available_pitches",
                     branch_name=normalized_branch_name,
-                    booking_date=datetime_info["booking_date"],
-                    start_time=datetime_info["start_time"],
-                    end_time=datetime_info["end_time"],
+                    booking_date=booking_date,
+                    start_time=start_time,
+                    end_time=end_time,
                 )
             )
             return []
@@ -380,9 +454,9 @@ class ActionCheckAvailablePitchesByBranch(Action):
                 tracker,
                 "available_pitches",
                 branch_name=normalized_branch_name,
-                booking_date=datetime_info["booking_date"],
-                start_time=datetime_info["start_time"],
-                end_time=datetime_info["end_time"],
+                booking_date=booking_date,
+                start_time=start_time,
+                end_time=end_time,
                 pitch_names=", ".join(pitch_names),
             )
         )
@@ -396,12 +470,40 @@ class ActionCheckPitchAvailability(Action):
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: dict):
         latest_text = tracker.latest_message.get("text", "")
 
+        branch_name = extract_branch_name_from_text(latest_text)
         pitch_name = extract_pitch_name_from_text(latest_text)
+
+        # Nếu NLU đoán nhầm sang check sân cụ thể,
+        # nhưng câu thực tế là hỏi theo chi nhánh,
+        # thì chuyển về action check sân theo chi nhánh.
+        if branch_name and not pitch_name:
+            return ActionCheckAvailablePitchesByBranch().run(
+                dispatcher,
+                tracker,
+                domain,
+            )
+
         if not pitch_name:
             dispatcher.utter_message(text=msg(tracker, "ask_pitch_name"))
             return []
 
         datetime_info = extract_booking_datetime_info(latest_text)
+
+        if not datetime_info["is_complete"]:
+            last_booking_date = tracker.get_slot("last_booking_date")
+            last_start_time = tracker.get_slot("last_start_time")
+            last_end_time = tracker.get_slot("last_end_time")
+
+            if last_booking_date and last_start_time and last_end_time:
+                datetime_info = {
+                    "booking_date": last_booking_date,
+                    "start_time": last_start_time,
+                    "end_time": last_end_time,
+                    "missing_fields": [],
+                    "is_complete": True,
+                    "is_past": False,
+                }
+
         if not datetime_info["is_complete"]:
             missing_fields = datetime_info["missing_fields"]
 
@@ -434,15 +536,71 @@ class ActionCheckPitchAvailability(Action):
         pitch_id = pitch[0]
         pitch_real_name = pitch[1]
 
+        booking_date = datetime_info["booking_date"]
+        start_time = datetime_info["start_time"]
+        end_time = datetime_info["end_time"]
+
+        slot_events = [
+            SlotSet("last_pitch_name", pitch_real_name),
+            SlotSet("last_booking_date", booking_date),
+            SlotSet("last_start_time", start_time),
+            SlotSet("last_end_time", end_time),
+        ]
+
+        if not is_valid_slot_boundary(start_time) or not is_valid_slot_boundary(end_time):
+            result = get_available_slots_in_time_range_for_pitch(
+                pitch_id=pitch_id,
+                booking_date=booking_date,
+                requested_start_time=start_time,
+                requested_end_time=end_time,
+            )
+
+            if not result["ok"]:
+                dispatcher.utter_message(text=msg(tracker, result["error_key"]))
+                return []
+
+            slots = result["data"]
+            rounded_start_time = result["rounded_start_time"]
+            rounded_end_time = result["rounded_end_time"]
+
+            if not slots:
+                dispatcher.utter_message(
+                    text=(
+                        f"Hệ thống đặt sân theo slot 45 phút.\n"
+                        f"Khung giờ bạn nhập ({start_time} đến {end_time}) không đúng slot hợp lệ.\n\n"
+                        f"Khung giờ hợp lệ gần nhất là {rounded_start_time} đến {rounded_end_time}.\n"
+                        f"Tuy nhiên hiện chưa có khung giờ trống cho {pitch_real_name} ngày {booking_date}."
+                    )
+                )
+                return slot_events
+
+            slot_text = "\n".join(
+                [
+                    f"- {slot['start_time']} đến {slot['end_time']}"
+                    for slot in slots
+                ]
+            )
+
+            dispatcher.utter_message(
+                text=(
+                    f"Hệ thống đặt sân theo slot 45 phút.\n"
+                    f"Khung giờ bạn nhập ({start_time} đến {end_time}) không đúng slot hợp lệ.\n\n"
+                    f"Khung giờ hợp lệ gần nhất là {rounded_start_time} đến {rounded_end_time}.\n"
+                    f"Các khung giờ trống của {pitch_real_name} ngày {booking_date} là:\n"
+                    f"{slot_text}"
+                )
+            )
+            return slot_events
+
         result = is_pitch_available(
             pitch_id=pitch_id,
-            booking_date=datetime_info["booking_date"],
-            start_time=datetime_info["start_time"],
-            end_time=datetime_info["end_time"],
+            booking_date=booking_date,
+            start_time=start_time,
+            end_time=end_time,
         )
 
         if not result["ok"]:
-            dispatcher.utter_message("error_key", "database_error")
+            dispatcher.utter_message(text=msg(tracker, result["error_key"]))
             return []
 
         if result["available"]:
@@ -451,9 +609,9 @@ class ActionCheckPitchAvailability(Action):
                     tracker,
                     "pitch_available",
                     pitch_name=pitch_real_name,
-                    start_time=datetime_info["start_time"],
-                    end_time=datetime_info["end_time"],
-                    booking_date=datetime_info["booking_date"],
+                    start_time=start_time,
+                    end_time=end_time,
+                    booking_date=booking_date,
                 )
             )
         else:
@@ -462,14 +620,13 @@ class ActionCheckPitchAvailability(Action):
                     tracker,
                     "pitch_unavailable",
                     pitch_name=pitch_real_name,
-                    start_time=datetime_info["start_time"],
-                    end_time=datetime_info["end_time"],
-                    booking_date=datetime_info["booking_date"],
+                    start_time=start_time,
+                    end_time=end_time,
+                    booking_date=booking_date,
                 )
             )
 
-        return []
-
+        return slot_events
 
 class ActionBookingGuide(Action):
     def name(self) -> str:

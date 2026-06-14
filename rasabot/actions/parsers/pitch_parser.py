@@ -3,13 +3,25 @@ import re
 
 GENERIC_PITCH_PHRASES = {
     "sân",
+    "san",
     "sân nào",
+    "san nao",
     "các sân",
+    "cac san",
     "nhiều sân",
+    "nhieu san",
     "mọi sân",
+    "moi san",
     "xem sân",
+    "xem san",
     "có sân",
+    "co san",
     "sân này",
+    "san nay",
+    "sân đó",
+    "san do",
+    "sân kia",
+    "san kia",
     "pitch",
     "which pitch",
     "any pitch",
@@ -24,16 +36,74 @@ GENERIC_PITCH_PHRASES = {
 def _normalize_text(text: str | None) -> str:
     if not text:
         return ""
+
     return re.sub(r"\s+", " ", text.strip())
 
 
-def normalize_pitch_name(pitch_name: str | None) -> str | None:
+def _clean_pitch_name(pitch_name: str | None) -> str | None:
     if not pitch_name:
         return None
 
     pitch_name = _normalize_text(pitch_name)
     pitch_name = pitch_name.strip(" ,.?;:!-。、「」『』")
 
+    cleanup_patterns = [
+        r"\bthì\s+sao\b",
+        r"\bthi\s+sao\b",
+        r"\bthế\s+nào\b",
+        r"\bthe\s+nao\b",
+        r"\bvậy\s+thì\s+sao\b",
+        r"\bvay\s+thi\s+sao\b",
+        r"\bvậy\s+sao\b",
+        r"\bvay\s+sao\b",
+        r"\bcó\s+trống\s+không\b",
+        r"\bco\s+trong\s+khong\b",
+        r"\bcó\s+rảnh\s+không\b",
+        r"\bco\s+ranh\s+khong\b",
+        r"\bcòn\s+trống\s+không\b",
+        r"\bcon\s+trong\s+khong\b",
+        r"\bcòn\s+rảnh\s+không\b",
+        r"\bcon\s+ranh\s+khong\b",
+        r"\brảnh\s+không\b",
+        r"\branh\s+khong\b",
+        r"\btrống\s+không\b",
+        r"\btrong\s+khong\b",
+        r"\bđặt\s+được\s+không\b",
+        r"\bdat\s+duoc\s+khong\b",
+        r"\bbook\s+được\s+không\b",
+        r"\bbook\s+duoc\s+khong\b",
+        r"\bis\s+available\b",
+        r"\bavailable\b",
+        r"\bis\s+free\b",
+        r"\bfree\b",
+        r"\bcan\s+i\s+book\b",
+        r"\bcan\s+book\b",
+        r"\bbookable\b",
+        r"空いていますか",
+        r"空いてる",
+        r"予約できますか",
+        r"予約できる",
+        r"はどうですか",
+        r"どうですか",
+    ]
+
+    cleanup_regex = "|".join(cleanup_patterns)
+    pitch_name = re.split(cleanup_regex, pitch_name, maxsplit=1, flags=re.IGNORECASE)[0]
+
+    pitch_name = _normalize_text(pitch_name)
+    pitch_name = pitch_name.strip(" ,.?;:!-。、「」『』")
+
+    if not pitch_name:
+        return None
+
+    return pitch_name
+
+
+def normalize_pitch_name(pitch_name: str | None) -> str | None:
+    if not pitch_name:
+        return None
+
+    pitch_name = _clean_pitch_name(pitch_name)
     if not pitch_name:
         return None
 
@@ -61,6 +131,10 @@ def normalize_pitch_name(pitch_name: str | None) -> str | None:
         flags=re.IGNORECASE,
     )
 
+    pitch_name = _clean_pitch_name(pitch_name)
+    if not pitch_name:
+        return None
+
     return pitch_name
 
 
@@ -77,14 +151,16 @@ def has_pitch_like_pattern(text: str | None) -> bool:
 
     patterns = [
         r"\bsân\s+[^\s].+",
+        r"\bsan\s+[^\s].+",
         r"\bpitch\s+[^\s].+",
         r"\bfootball\s+pitch\s+[^\s].+",
         r"\b[a-z0-9\-]+\s+pitch\b",
         r"[a-zA-Z0-9\-]+\s*サッカー場",
         r"サッカー場\s*[a-zA-Z0-9\-]+",
+        r"\b[A-Z0-9][A-Z0-9\-]*\b\s*(?:thì sao|thi sao|はどうですか|どうですか)",
     ]
 
-    return any(re.search(pattern, lowered) for pattern in patterns)
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns)
 
 
 def looks_like_pitch_query(text: str | None) -> bool:
@@ -95,13 +171,23 @@ def looks_like_pitch_query(text: str | None) -> bool:
 
     keywords = [
         "có trống không",
+        "co trong khong",
         "có rảnh không",
+        "co ranh khong",
         "còn trống không",
+        "con trong khong",
         "còn rảnh không",
+        "con ranh khong",
         "rảnh không",
+        "ranh khong",
         "trống không",
+        "trong khong",
         "đặt được không",
+        "dat duoc khong",
         "book được không",
+        "book duoc khong",
+        "thì sao",
+        "thi sao",
         "available",
         "free",
         "can i book",
@@ -111,17 +197,26 @@ def looks_like_pitch_query(text: str | None) -> bool:
         "空いてる",
         "予約できますか",
         "予約できる",
+        "どうですか",
     ]
 
     has_pitch_word = (
         "sân" in lowered
+        or "san" in lowered
         or "pitch" in lowered
         or "football pitch" in lowered
         or "サッカー場" in text
     )
+
+    has_short_pitch_follow_up = re.search(
+        r"\b[A-Z0-9][A-Z0-9\-]*\b\s*(?:thì sao|thi sao)",
+        text,
+        flags=re.IGNORECASE,
+    ) is not None
+
     has_query_keyword = any(keyword in lowered for keyword in keywords)
 
-    return has_pitch_word and has_query_keyword
+    return (has_pitch_word and has_query_keyword) or has_short_pitch_follow_up
 
 
 def extract_pitch_name_from_text(text: str | None) -> str | None:
@@ -133,12 +228,19 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
 
     generic_patterns = [
         r"\bcó sân nào\b",
+        r"\bco san nao\b",
         r"\bsân nào\b",
+        r"\bsan nao\b",
         r"\bxem sân\b",
+        r"\bxem san\b",
         r"\bcác sân\b",
+        r"\bcac san\b",
         r"\bsân ở\b",
+        r"\bsan o\b",
         r"\bsân tại\b",
+        r"\bsan tai\b",
         r"\bsân theo\b",
+        r"\bsan theo\b",
         r"\bany pitch\b",
         r"\bwhich pitch\b",
         r"\bshow me pitches\b",
@@ -153,26 +255,41 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
 
     stop_patterns = [
         r"ngày\s+\d{1,2}[/\-]\d{1,2}[/\-]\d{4}",
+        r"ngay\s+\d{1,2}[/\-]\d{1,2}[/\-]\d{4}",
         r"ngày\s+\d{4}[/\-]\d{1,2}[/\-]\d{1,2}",
+        r"ngay\s+\d{4}[/\-]\d{1,2}[/\-]\d{1,2}",
         r"\d{4}[/\-]\d{1,2}[/\-]\d{1,2}",
         r"\d{1,2}[/\-]\d{1,2}[/\-]\d{4}",
         r"\d{4}年\s*\d{1,2}月\s*\d{1,2}日",
 
         r"hôm qua",
+        r"hom qua",
         r"hôm nay",
+        r"hom nay",
         r"ngày mai",
+        r"ngay mai",
         r"mai",
         r"ngày mốt",
+        r"ngay mot",
         r"mốt",
+        r"mot",
 
         r"sáng nay",
+        r"sang nay",
         r"sáng mai",
+        r"sang mai",
         r"trưa nay",
+        r"trua nay",
         r"trưa mai",
+        r"trua mai",
         r"chiều nay",
+        r"chieu nay",
         r"chiều mai",
+        r"chieu mai",
         r"tối nay",
+        r"toi nay",
         r"tối mai",
+        r"toi mai",
 
         r"yesterday",
         r"today",
@@ -204,21 +321,34 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
         r"日曜日",
 
         r"từ\s+\d{1,2}",
+        r"tu\s+\d{1,2}",
         r"from\s+\d{1,2}",
         r"lúc\s+\d{1,2}",
+        r"luc\s+\d{1,2}",
         r"khoảng\s+\d{1,2}",
+        r"khoang\s+\d{1,2}",
         r"\d{1,2}:\d{2}",
-        r"\d{1,2}h",
+        r"\d{1,2}[hg]",
         r"\d{1,2}時",
 
         r"có trống không",
+        r"co trong khong",
         r"có rảnh không",
+        r"co ranh khong",
         r"còn trống không",
+        r"con trong khong",
         r"còn rảnh không",
+        r"con ranh khong",
         r"rảnh không",
+        r"ranh khong",
         r"trống không",
+        r"trong khong",
         r"đặt được không",
+        r"dat duoc khong",
         r"book được không",
+        r"book duoc khong",
+        r"thì sao",
+        r"thi sao",
 
         r"is available",
         r"available",
@@ -232,6 +362,8 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
         r"空いてる",
         r"予約できますか",
         r"予約できる",
+        r"はどうですか",
+        r"どうですか",
     ]
 
     stop_regex = "|".join(stop_patterns)
@@ -239,6 +371,9 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
     patterns = [
         # Vietnamese: sân A1 ngày mai...
         rf"\b(sân\s+.+?)(?=\s+(?:{stop_regex})|$)",
+
+        # Vietnamese without accent: san A1 ngay mai...
+        rf"\b(san\s+.+?)(?=\s+(?:{stop_regex})|$)",
 
         # English: pitch A1 tomorrow...
         rf"\b(pitch\s+.+?)(?=\s+(?:{stop_regex})|$)",
@@ -248,6 +383,9 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
 
         # English: A1 pitch tomorrow...
         rf"\b([a-zA-Z0-9][a-zA-Z0-9\s\-]*?\s+pitch)(?=\s+(?:{stop_regex})|$)",
+
+        # Short pitch code follow-up: F88 thì sao
+        rf"\b([A-Z0-9][A-Z0-9\-]*)\b(?=\s+(?:thì sao|thi sao|available|free)|$)",
 
         # Japanese: A1サッカー場は明日...
         rf"([a-zA-Z0-9\-]+\s*サッカー場)(?=(?:は|が|を|で|に|の|、|\s|{stop_regex})|$)",
@@ -264,14 +402,18 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
         pitch_name = normalize_pitch_name(match.group(1))
 
         if pitch_name and not _is_generic_pitch_phrase(pitch_name):
+            if pitch_name.lower().startswith("san "):
+                pitch_name = "Sân " + pitch_name[4:]
             return pitch_name
 
     if looks_like_pitch_query(raw_text):
         fallback_patterns = [
             r"\b(sân\s+[^\?,\.!。]+)",
+            r"\b(san\s+[^\?,\.!。]+)",
             r"\b(pitch\s+[^\?,\.!。]+)",
             r"\b(football\s+pitch\s+[^\?,\.!。]+)",
             r"\b([a-zA-Z0-9][a-zA-Z0-9\s\-]*?\s+pitch)",
+            r"\b([A-Z0-9][A-Z0-9\-]*)\b(?=\s+(?:thì sao|thi sao|available|free)|$)",
             r"([a-zA-Z0-9\-]+\s*サッカー場)",
             r"(サッカー場\s*[a-zA-Z0-9\-]+)",
         ]
@@ -297,6 +439,9 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
                 )[0].strip()
 
                 pitch_name = normalize_pitch_name(pitch_name)
+
+                if pitch_name and pitch_name.lower().startswith("san "):
+                    pitch_name = "Sân " + pitch_name[4:]
 
                 if pitch_name and not _is_generic_pitch_phrase(pitch_name):
                     return pitch_name

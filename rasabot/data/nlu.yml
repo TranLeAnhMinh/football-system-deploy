@@ -78,26 +78,82 @@ nlu:
 - intent: ask_pitches_by_branch
   examples: |
     - quận 1 có những sân nào
-    - quận 3 có sân gì
-    - sân ở quận 7
-    - chi nhánh quận 10 có sân nào
-    - q1 có sân nào
-    - q 3 có sân gì
-    - còn quận 3 thì sao
-    - còn q7 thì sao
-    - thế quận thủ đức
-    - còn quận hai bà trưng
-    - bên q hoàng mai có sân nào
-    - q đống đa có sân nào
-    - quận hoàng mai thì sao
+    - quận 1 có sân nào
+    - quận 1 có sân gì
     - quận 1 thì có sân nào
-    - q1 thì có sân nào
+    - xem sân ở quận 1
     - cho tôi xem sân ở quận 1
-    - quận abc thì có sân nào
-    - q999 có sân nào
-    - có sân nào
-    - xem sân giúp tôi
-    - cho tôi xem sân
+
+    - quận 10 có sân nào
+    - quận 10 có những sân nào
+    - quận 10 có sân gì
+    - quận 10 thì có sân nào
+    - xem sân ở quận 10
+    - cho tôi xem sân ở quận 10
+
+    - quận 3 có sân nào
+    - quận 3 có những sân nào
+    - quận 3 có sân gì
+    - quận 3 thì có sân nào
+    - xem sân ở quận 3
+    - cho tôi xem sân ở quận 3
+
+    - quận 7 có sân nào
+    - quận 7 có những sân nào
+    - quận 7 có sân gì
+    - quận 7 thì có sân nào
+    - sân ở quận 7
+    - xem sân ở quận 7
+    - cho tôi xem sân ở quận 7
+
+    - quận ba đình có sân nào
+    - quận ba đình có những sân nào
+    - quận ba đình có sân gì
+    - quận ba đình thì có sân nào
+    - xem sân ở quận ba đình
+    - cho tôi xem sân ở quận ba đình
+    - bên quận ba đình có sân nào
+    - bên q ba đình có sân nào
+    - q ba đình có sân nào
+
+    - quận hai bà trưng có sân nào
+    - quận hai bà trưng có những sân nào
+    - quận hai bà trưng có sân gì
+    - quận hai bà trưng thì có sân nào
+    - xem sân ở quận hai bà trưng
+    - cho tôi xem sân ở quận hai bà trưng
+    - bên quận hai bà trưng có sân nào
+    - bên q hai bà trưng có sân nào
+    - q hai bà trưng có sân nào
+
+    - quận hoàng mai có sân nào
+    - quận hoàng mai có những sân nào
+    - quận hoàng mai có sân gì
+    - quận hoàng mai thì có sân nào
+    - xem sân ở quận hoàng mai
+    - cho tôi xem sân ở quận hoàng mai
+    - bên quận hoàng mai có sân nào
+    - bên q hoàng mai có sân nào
+    - q hoàng mai có sân nào
+
+    - quận thanh xuân có sân nào
+    - quận thanh xuân có những sân nào
+    - quận thanh xuân có sân gì
+    - quận thanh xuân thì có sân nào
+    - xem sân ở quận thanh xuân
+    - cho tôi xem sân ở quận thanh xuân
+    - bên quận thanh xuân có sân nào
+    - bên q thanh xuân có sân nào
+    - q thanh xuân có sân nào
+
+    - q1 có sân nào
+    - q1 có sân gì
+    - q1 thì có sân nào
+    - q10 có sân nào
+    - q10 có sân gì
+    - q3 có sân nào
+    - q7 có sân nào
+
     - what pitches are available in district 1
     - show me pitches in district 3
     - which pitches are in district 7
@@ -105,14 +161,22 @@ nlu:
     - show pitches in q1
     - pitches in q7
     - what about district 3
-    - show me football pitches
-    - are there any pitches
+    - show me football pitches by branch
+    - what pitches are in Ba Dinh
+    - show me pitches in Thanh Xuan
+    - what pitches are in Hoang Mai
+    - what pitches are in Hai Ba Trung
+
     - 第1区にはどんなサッカー場がありますか
     - 第3区のサッカー場を見せて
     - 第7区にはサッカー場がありますか
     - 支店ごとのサッカー場を見たいです
-    - サッカー場一覧を見せて
-    - サッカー場を見たいです
+    - 第1区のサッカー場一覧を見せて
+    - 第3区にはどんなサッカー場がありますか
+    - バーディン区にはどんなサッカー場がありますか
+    - ホアンマイ区にはどんなサッカー場がありますか
+    - タインスアン区にはどんなサッカー場がありますか
+    - ハイバーチュン区にはどんなサッカー場がありますか
 
 - intent: ask_available_pitches
   examples: |
@@ -128,15 +192,75 @@ nlu:
     - còn sân nào ở quận 3 ngày 2025-09-18 từ 18:00 đến 18:45
     - quận 1 từ 07:00 đến 07:45 còn sân nào
     - quận 1 ngày 2025-09-18 còn sân nào
+
+    - quận 1 sáng mai 7h đến 9h có sân nào trống
+    - quận 1 sáng mai 7h-9h có sân nào trống
+    - quận 1 tối mai 19h đến 19h45 còn sân nào
+    - quận 1 tối mai 19h-19h45 còn sân nào
+    - quận 1 tối nay 19h đến 21h còn sân nào
+    - quận 1 tối nay 19h-21h còn sân nào
+    - quận 1 ngày mai 7h đến 9h còn sân nào
+    - quận 1 ngày mai 7h-9h còn sân nào
+    - quận 1 mai 7h đến 9h còn sân nào
+    - quận 1 mai 7h-9h còn sân nào
+    - quận 1 ngày mai từ 7h đến 9h có sân nào trống
+    - quận 1 ngày mai 7h đến 9h có sân nào trống
+    - quận 1 ngày mai 7h-9h có sân nào trống
+    - quận 1 có sân nào trống từ 7h đến 9h không
+    - quận 1 có sân nào trống 7h đến 9h không
+    - quận 1 có sân nào trống 7h-9h không
+    - quận 1 giờ này còn sân nào trống
+    - quận 1 tối nay còn sân nào trống
+    - quận 1 sáng mai còn sân nào trống
+
+    - q1 sáng mai 7h đến 9h còn sân nào
+    - q1 sáng mai 7h-9h còn sân nào
+    - q1 tối mai 19h đến 19h45 còn sân nào
+    - q1 tối mai 19h-19h45 còn sân nào
+    - q1 ngày mai 7h đến 9h có sân nào trống
+    - q1 ngày mai 7h-9h có sân nào trống
+    - q1 có sân nào trống từ 7h đến 9h không
+    - q1 có sân nào trống 7h đến 9h không
+    - q1 có sân nào trống 7h-9h không
+    - q1 tối nay còn sân nào
+
+    - quận thanh xuân sáng mai 7h đến 9h có sân nào trống
+    - quận thanh xuân sáng mai 7h-9h có sân nào trống
+    - quận thanh xuân tối mai 19h đến 21h có sân nào trống
+    - quận thanh xuân tối mai 19h-21h có sân nào trống
+    - quận thanh xuân tối nay còn sân nào trống
+    - còn sân nào ở quận thanh xuân sáng mai 7h đến 9h
+    - còn sân nào ở quận thanh xuân sáng mai 7h-9h
+
+    - quận 3 sáng mai 6h đến 9h còn sân nào
+    - quận 3 sáng mai 6h-9h còn sân nào
+    - quận 7 tối mai 18h đến 20h còn sân nào
+    - quận 7 tối mai 18h-20h còn sân nào
+    - còn sân nào ở quận 1 tối mai 19h đến 21h
+    - còn sân nào ở quận 1 tối mai 19h-21h
+
     - which pitches are available in district 1 on 2025-09-18 from 07:00 to 07:45
     - are there any available pitches in q1 tomorrow from 06:00 to 06:45
     - show me available pitches in district 3 from 18:00 to 18:45
     - available pitches in district 7 today from 19:30 to 20:15
     - any free pitches in q10 tomorrow morning from 06:00 to 06:45
+    - any free pitches in district 1 tomorrow 7am to 9am
+    - district 1 tomorrow 7am-9am available pitches
+    - show available pitches in district 1 tomorrow from 7 to 9
+    - are there free pitches in district 1 tonight 7pm to 9pm
+
     - 第1区で2025-09-18の07:00から07:45まで空いているサッカー場はありますか
     - 明日06:00から06:45まで第10区で空いているサッカー場はありますか
     - 第3区で18:00から18:45まで空いているサッカー場を見せて
     - 今日19:30から20:15まで第7区で空いているサッカー場はありますか
+    - 明日の朝7時から9時まで第1区で空いているサッカー場はありますか
+    - 明日の朝7時-9時に第1区で空いているサッカー場はありますか
+    - 明日の夜19時から21時まで第1区で空いているサッカー場はありますか
+    - 明日の夜19時-21時に第1区で空いているサッカー場はありますか
+    - 第1区で明日7時から9時まで空いているサッカー場を見せて
+    - 第1区で明日7時-9時に空いているサッカー場を見せて
+    - タインスアン区で明日の朝7時から9時まで空いているサッカー場はありますか
+    - タインスアン区で明日7時-9時に空いているサッカー場はありますか
 
 - intent: ask_pitch_availability
   examples: |
@@ -144,25 +268,108 @@ nlu:
     - sân 11 Q1 - C ngày 2025-09-18 từ 07:30 đến 08:15 có rảnh không
     - cho tôi hỏi sân A1 ngày mai từ 18:00 đến 18:45 có trống không
     - sân Mỹ Đình có trống không
-    - sân này có rảnh không
     - sân bất kỳ tối nay 18h đến 18h45 còn trống không
     - sân bất kỳ tối mai 18h đến 18h45 còn trống không
     - sân bất kỳ hôm nay từ 18:00 đến 18:45 có rảnh không
     - sân bất kỳ ngày mai từ 18:00 đến 18:45 đặt được không
     - sân bất kỳ từ 18:00 đến 18:45 còn trống không
     - cho tôi hỏi sân bất kỳ tối nay 18h đến 18h45 có trống không
+
+    - Sân 11 Q1 - C sáng mai 7h-9h có trống không
+    - Sân 11 Q1 - C sáng mai 7h đến 9h có trống không
+    - Sân 11 Q1 - C sáng mai từ 7h đến 9h có trống không
+    - Sân 11 Q1 - C tối mai 19h-19h45 có trống không
+    - Sân 11 Q1 - C tối mai 19h đến 19h45 có trống không
+    - Sân 11 Q1 - C tối mai từ 19h đến 19h45 có trống không
+    - Sân 11 Q1 - C ngày mai 7h-9h có rảnh không
+    - Sân 11 Q1 - C ngày mai 7h đến 9h có rảnh không
+    - Sân 11 Q1 - C mai 7h-9h còn trống không
+    - Sân 11 Q1 - C mai 7h đến 9h còn trống không
+    - Sân 11 Q1 - C hôm nay 18h-20h có trống không
+    - Sân 11 Q1 - C tối nay 18h-20h có trống không
+
+    - sân F88 sáng mai 7h-9h có trống không
+    - sân F88 sáng mai 7h đến 9h có trống không
+    - sân F88 sáng mai từ 7h đến 9h có trống không
+    - sân F88 tối mai 19h-21h có rảnh không
+    - sân F88 tối mai 19h đến 21h có rảnh không
+    - sân F88 tối nay 19h-21h còn trống không
+    - sân F88 ngày mai 7h-9h đặt được không
+    - sân F88 mai 7h đến 9h đặt được không
+
+    - sân 5 Thủ Đức A tối nay 19h đến 19h45 có trống không
+    - sân 5 Thủ Đức A tối nay 19h-19h45 có trống không
+    - sân 5 Thủ Đức A tối mai 19h đến 21h có rảnh không
+    - sân 5 Thủ Đức A sáng mai 7h-9h có trống không
+    - sân 5 Thủ Đức A sáng mai 7h đến 9h có trống không
+
+    - sân Hoàng Công tối mai 19h-21h có trống không
+    - sân Hoàng Công sáng mai 7h đến 9h có rảnh không
+    - sân Mỹ Đình tối nay 18h-20h còn trống không
+    - sân Mỹ Đình sáng mai 6h-9h có trống không
+
+    - sân 11 Q1 - C sáng mai 7g-9g có trống không
+    - sân F88 sáng mai 7g đến 9g có trống không
+    - sân 5 Thủ Đức A tối mai 19g-21g có trống không
+
+    - sân 11 Q1 - C sáng mai 7h–9h có trống không
+    - sân F88 tối mai 19h–21h có trống không
+    - sân 5 Thủ Đức A sáng mai 7h—9h có trống không
+
+    - còn sân F88 thì sao
+    - thế sân F88 thì sao
+    - vậy sân F88 thì sao
+    - sân F88 thì sao
+    - còn F88 thì sao
+    - F88 thì sao
+    - check sân F88 giúp tôi
+    - kiểm tra sân F88 giúp tôi
+    - sân F88 có trống không
+    - sân F88 có rảnh không
+
+    - còn sân 11 Q1 - C thì sao
+    - sân 11 Q1 - C thì sao
+    - còn Sân 11 Q1 - C thì sao
+    - vậy Sân 11 Q1 - C thì sao
+    - kiểm tra sân 11 Q1 - C giúp tôi
+    - check sân 11 Q1 - C giúp tôi
+
+    - còn sân 5 Thủ Đức A thì sao
+    - sân 5 Thủ Đức A thì sao
+    - vậy sân 5 Thủ Đức A thì sao
+    - check sân 5 Thủ Đức A giúp tôi
+    - kiểm tra sân 5 Thủ Đức A giúp tôi
+
     - is My Dinh pitch available tomorrow from 19:30 to 20:15
     - is pitch A1 available tomorrow from 18:00 to 18:45
-    - is this pitch free
-    - is this pitch available
     - can I book this pitch tomorrow from 18:00 to 18:45
     - is any pitch available tonight from 18:00 to 18:45
+    - is F88 pitch available tomorrow 7 to 9
+    - is F88 pitch available tomorrow 7am to 9am
+    - is pitch F88 available tomorrow from 7 to 9
+    - is pitch F88 free tomorrow 7am-9am
+    - is pitch 11 Q1 - C available tomorrow 7am-9am
+    - is pitch 11 Q1 - C free tonight 7pm-9pm
+    - how about pitch F88
+    - what about pitch F88
+    - what about F88
+    - how about F88
+    - check pitch F88
+    - check F88 pitch
+
     - Mỹ Đìnhサッカー場は明日19:30から20:15まで空いていますか
     - A1サッカー場は明日18:00から18:45まで空いていますか
-    - このサッカー場は空いていますか
     - 明日18:00から18:45まで予約できますか
     - 今夜18:00から18:45まで空いているサッカー場はありますか
-
+    - F88サッカー場は明日7時から9時まで空いていますか
+    - F88サッカー場は明日7時-9時に空いていますか
+    - F88サッカー場は今夜19時から21時まで空いていますか
+    - 11 Q1 - Cサッカー場は明日7時-9時に空いていますか
+    - 11 Q1 - Cサッカー場は今夜19時から21時まで空いていますか
+    - F88サッカー場はどうですか
+    - F88はどうですか
+    - ではF88サッカー場は空いていますか
+    
 - intent: ask_booking_guide
   examples: |
     - hướng dẫn tôi cách đặt sân

@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("chatbot-input");
   const sendBtn = document.getElementById("chatbot-send");
   const messages = document.getElementById("chatbot-messages");
+  const suggestions = document.getElementById("chatbot-suggestions");
 
   if (!icon || !chatWindow || !closeBtn || !input || !sendBtn || !messages) return;
 
@@ -42,6 +43,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (lang === "en") return "❌ Cannot connect to the Rasa chatbot.";
     if (lang === "ja") return "❌ Rasaチャットボットに接続できません。";
     return "❌ Không thể kết nối tới Rasa chatbot.";
+  }
+
+  function hideSuggestions() {
+    if (suggestions) {
+      suggestions.style.display = "none";
+    }
   }
 
   icon.addEventListener("click", () => {
@@ -85,14 +92,21 @@ document.addEventListener("DOMContentLoaded", () => {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  async function sendMessage() {
-    const question = input.value.trim();
+  async function sendMessage(predefinedQuestion = null) {
+    const question = predefinedQuestion || input.value.trim();
     if (!question) return;
+
+    hideSuggestions();
 
     const language = getCurrentLanguage();
 
     addMessage(question, "user");
-    input.value = "";
+
+    if (!predefinedQuestion) {
+      input.value = "";
+    } else {
+      input.value = "";
+    }
 
     const typing = document.createElement("div");
     typing.className = "msg bot";
@@ -137,9 +151,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  sendBtn.addEventListener("click", sendMessage);
+  document.querySelectorAll(".suggestion-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const question = btn.innerText.trim();
+      sendMessage(question);
+    });
+  });
+
+  sendBtn.addEventListener("click", () => sendMessage());
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   });
 });

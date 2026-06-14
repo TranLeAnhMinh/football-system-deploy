@@ -23,6 +23,30 @@ slots:
       - type: from_entity
         entity: branch_name
 
+  last_pitch_name:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_booking_date:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_start_time:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_end_time:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
 actions:
   - action_greet
   - action_goodbye
