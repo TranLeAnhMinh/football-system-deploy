@@ -99,6 +99,10 @@ function renderBranchRows(items) {
 
 // =================== Render nút hành động ===================
 function getActionButtons(b) {
+  const now = new Date();
+  const bookingTime = b.startAt ? new Date(b.startAt) : null;
+  const isExpired = bookingTime && bookingTime <= now;
+
   if (b.status === "WAITING_REFUND") {
     return `
       <button class="action-btn refund"
@@ -106,13 +110,16 @@ function getActionButtons(b) {
          ${i18n.action?.refund || "Hoàn tiền"}
       </button>`;
   }
-  if (b.status === "APPROVED") {
+
+  // Chỉ cho hủy khi booking đã xác nhận và CHƯA quá giờ đặt
+  if (b.status === "APPROVED" && !isExpired) {
     return `
       <button class="action-btn cancel"
               onclick="updateBookingStatus('${b.bookingId}', 'APPROVED', 'WAITING_REFUND')">
         ${i18n.action?.cancel || "Hủy"}
       </button>`;
   }
+
   return `<span style="color:#9ca3af;">-</span>`;
 }
 
