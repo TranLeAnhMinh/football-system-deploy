@@ -109,14 +109,12 @@ def normalize_pitch_name(pitch_name: str | None) -> str | None:
 
     lowered = pitch_name.lower()
 
-    # English -> Vietnamese DB naming
     if lowered.startswith("pitch "):
         pitch_name = "Sân " + pitch_name[6:]
 
     if lowered.startswith("football pitch "):
         pitch_name = "Sân " + pitch_name[15:]
 
-    # Japanese -> Vietnamese DB naming
     pitch_name = re.sub(
         r"^サッカー場\s*",
         "Sân ",
@@ -146,8 +144,6 @@ def _is_generic_pitch_phrase(text: str) -> bool:
 def has_pitch_like_pattern(text: str | None) -> bool:
     if not text:
         return False
-
-    lowered = text.lower()
 
     patterns = [
         r"\bsân\s+[^\s].+",
@@ -262,6 +258,14 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
         r"\d{1,2}[/\-]\d{1,2}[/\-]\d{4}",
         r"\d{4}年\s*\d{1,2}月\s*\d{1,2}日",
 
+        r"ngày\s+\d{1,2}[/\-]\d{1,2}",
+        r"ngay\s+\d{1,2}[/\-]\d{1,2}",
+
+        # Không dùng pattern rộng \d{1,2}[/\-]\d{1,2}
+        # vì dễ cắt nhầm tên sân có dấu '-' như "Sân 11 Q1 - C".
+        r"\b\d{1,2}/\d{1,2}\b",
+        r"\b\d{1,2}-\d{1,2}\b",
+
         r"hôm qua",
         r"hom qua",
         r"hôm nay",
@@ -274,22 +278,39 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
         r"mốt",
         r"mot",
 
+        r"buổi\s+sáng",
+        r"buoi\s+sang",
+        r"buổi\s+trưa",
+        r"buoi\s+trua",
+        r"buổi\s+chiều",
+        r"buoi\s+chieu",
+        r"buổi\s+tối",
+        r"buoi\s+toi",
+
         r"sáng nay",
         r"sang nay",
         r"sáng mai",
         r"sang mai",
+        r"sáng",
+        r"sang",
         r"trưa nay",
         r"trua nay",
         r"trưa mai",
         r"trua mai",
+        r"trưa",
+        r"trua",
         r"chiều nay",
         r"chieu nay",
         r"chiều mai",
         r"chieu mai",
+        r"chiều",
+        r"chieu",
         r"tối nay",
         r"toi nay",
         r"tối mai",
         r"toi mai",
+        r"tối",
+        r"toi",
 
         r"yesterday",
         r"today",
@@ -369,28 +390,13 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
     stop_regex = "|".join(stop_patterns)
 
     patterns = [
-        # Vietnamese: sân A1 ngày mai...
-        rf"\b(sân\s+.+?)(?=\s+(?:{stop_regex})|$)",
-
-        # Vietnamese without accent: san A1 ngay mai...
-        rf"\b(san\s+.+?)(?=\s+(?:{stop_regex})|$)",
-
-        # English: pitch A1 tomorrow...
-        rf"\b(pitch\s+.+?)(?=\s+(?:{stop_regex})|$)",
-
-        # English: football pitch A1 tomorrow...
-        rf"\b(football\s+pitch\s+.+?)(?=\s+(?:{stop_regex})|$)",
-
-        # English: A1 pitch tomorrow...
-        rf"\b([a-zA-Z0-9][a-zA-Z0-9\s\-]*?\s+pitch)(?=\s+(?:{stop_regex})|$)",
-
-        # Short pitch code follow-up: F88 thì sao
-        rf"\b([A-Z0-9][A-Z0-9\-]*)\b(?=\s+(?:thì sao|thi sao|available|free)|$)",
-
-        # Japanese: A1サッカー場は明日...
+        rf"\b(sân\s+.+?)(?=\s*(?:{stop_regex})|$)",
+        rf"\b(san\s+.+?)(?=\s*(?:{stop_regex})|$)",
+        rf"\b(pitch\s+.+?)(?=\s*(?:{stop_regex})|$)",
+        rf"\b(football\s+pitch\s+.+?)(?=\s*(?:{stop_regex})|$)",
+        rf"\b([a-zA-Z0-9][a-zA-Z0-9\s\-]*?\s+pitch)(?=\s*(?:{stop_regex})|$)",
+        rf"\b([A-Z0-9][A-Z0-9\-]*)\b(?=\s*(?:thì sao|thi sao|available|free)|$)",
         rf"([a-zA-Z0-9\-]+\s*サッカー場)(?=(?:は|が|を|で|に|の|、|\s|{stop_regex})|$)",
-
-        # Japanese: サッカー場A1は明日...
         rf"(サッカー場\s*[a-zA-Z0-9\-]+)(?=(?:は|が|を|で|に|の|、|\s|{stop_regex})|$)",
     ]
 
@@ -432,7 +438,7 @@ def extract_pitch_name_from_text(text: str | None) -> str | None:
 
             if pitch_name:
                 pitch_name = re.split(
-                    rf"\s+(?:{stop_regex})",
+                    rf"\s*(?:{stop_regex})",
                     pitch_name,
                     maxsplit=1,
                     flags=re.IGNORECASE,

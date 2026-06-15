@@ -1,3 +1,5 @@
+import re
+
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
@@ -463,6 +465,41 @@ class ActionCheckAvailablePitchesByBranch(Action):
         return []
 
 
+def text_contains_time_or_date(text: str) -> bool:
+    if not text:
+        return False
+
+    lowered = text.lower()
+
+    patterns = [
+        r"\d{1,2}[:hHgG]\d{0,2}",
+        r"\d{1,2}\s*[-/]\s*\d{1,2}",
+        r"\bngày\b",
+        r"\bngay\b",
+        r"\bhôm nay\b",
+        r"\bhom nay\b",
+        r"\bhôm qua\b",
+        r"\bhom qua\b",
+        r"\bmai\b",
+        r"\bmốt\b",
+        r"\bmot\b",
+        r"\btối\b",
+        r"\btoi\b",
+        r"\bsáng\b",
+        r"\bsang\b",
+        r"\bchiều\b",
+        r"\bchieu\b",
+        r"\btrưa\b",
+        r"\btrua\b",
+        r"\btừ\b",
+        r"\btu\b",
+        r"\bđến\b",
+        r"\bden\b",
+    ]
+
+    return any(re.search(pattern, lowered) for pattern in patterns)
+
+
 class ActionCheckPitchAvailability(Action):
     def name(self) -> str:
         return "action_check_pitch_availability"
@@ -473,9 +510,6 @@ class ActionCheckPitchAvailability(Action):
         branch_name = extract_branch_name_from_text(latest_text)
         pitch_name = extract_pitch_name_from_text(latest_text)
 
-        # Nếu NLU đoán nhầm sang check sân cụ thể,
-        # nhưng câu thực tế là hỏi theo chi nhánh,
-        # thì chuyển về action check sân theo chi nhánh.
         if branch_name and not pitch_name:
             return ActionCheckAvailablePitchesByBranch().run(
                 dispatcher,
@@ -490,19 +524,29 @@ class ActionCheckPitchAvailability(Action):
         datetime_info = extract_booking_datetime_info(latest_text)
 
         if not datetime_info["is_complete"]:
-            last_booking_date = tracker.get_slot("last_booking_date")
-            last_start_time = tracker.get_slot("last_start_time")
-            last_end_time = tracker.get_slot("last_end_time")
+            has_new_time_or_date = text_contains_time_or_date(latest_text)
 
-            if last_booking_date and last_start_time and last_end_time:
-                datetime_info = {
-                    "booking_date": last_booking_date,
-                    "start_time": last_start_time,
-                    "end_time": last_end_time,
-                    "missing_fields": [],
-                    "is_complete": True,
-                    "is_past": False,
-                }
+            # Chỉ dùng context cũ khi câu hiện tại KHÔNG nhập ngày/giờ mới.
+            # Ví dụ dùng context:
+            # - còn sân F88 thì sao
+            # - F88 thì sao
+            #
+            # Không dùng context nếu user có nhập ngày/giờ nhưng parser không hiểu.
+            # Tránh lỗi lấy nhầm giờ/ngày từ câu trước.
+            if not has_new_time_or_date:
+                last_booking_date = tracker.get_slot("last_booking_date")
+                last_start_time = tracker.get_slot("last_start_time")
+                last_end_time = tracker.get_slot("last_end_time")
+
+                if last_booking_date and last_start_time and last_end_time:
+                    datetime_info = {
+                        "booking_date": last_booking_date,
+                        "start_time": last_start_time,
+                        "end_time": last_end_time,
+                        "missing_fields": [],
+                        "is_complete": True,
+                        "is_past": False,
+                    }
 
         if not datetime_info["is_complete"]:
             missing_fields = datetime_info["missing_fields"]
@@ -517,6 +561,18 @@ class ActionCheckPitchAvailability(Action):
 
             if missing_fields == ["end_time"]:
                 dispatcher.utter_message(text=msg(tracker, "missing_end_time"))
+                return []
+
+            if set(missing_fields) == {"start_time", "end_time"}:
+                dispatcher.utter_message(text=msg(tracker, "missing_start_end_time"))
+                return []
+
+            if set(missing_fields) == {"booking_date", "start_time"}:
+                dispatcher.utter_message(text=msg(tracker, "missing_booking_date_start_time"))
+                return []
+
+            if set(missing_fields) == {"booking_date", "end_time"}:
+                dispatcher.utter_message(text=msg(tracker, "missing_booking_date_end_time"))
                 return []
 
             dispatcher.utter_message(text=msg(tracker, "missing_datetime_pitch"))

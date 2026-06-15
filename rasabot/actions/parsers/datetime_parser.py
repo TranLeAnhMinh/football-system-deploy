@@ -12,24 +12,17 @@ def _normalize_text(text: str | None) -> str:
     return re.sub(r"\s+", " ", text.strip().lower())
 
 
-def _extract_date(text: str) -> str | None:
-    """
-    Hỗ trợ:
-    - 2025-09-18
-    - 2025/09/18
-    - 18/09/2025
-    - 18-09-2025
-    - 2025年09月18日
-    - 09/18/2025
-    """
+def _extract_date(text: str, now: datetime | None = None) -> str | None:
     if not text:
         return None
+
+    now = now or datetime.now()
 
     patterns = [
         ("ymd", r"\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b"),
         ("dmy", r"\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b"),
         ("ymd_ja", r"(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日"),
-        ("mdy", r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b"),
+        ("dmy_no_year", r"\b(?:ngày|ngay)?\s*(\d{1,2})[-/](\d{1,2})\b"),
     ]
 
     for date_type, pattern in patterns:
@@ -42,17 +35,24 @@ def _extract_date(text: str) -> str | None:
                 year = int(match.group(1))
                 month = int(match.group(2))
                 day = int(match.group(3))
+
             elif date_type == "dmy":
                 day = int(match.group(1))
                 month = int(match.group(2))
                 year = int(match.group(3))
-            else:
-                month = int(match.group(1))
-                day = int(match.group(2))
-                year = int(match.group(3))
+
+            elif date_type == "dmy_no_year":
+                day = int(match.group(1))
+                month = int(match.group(2))
+                year = now.year
+
+                parsed_temp = datetime(year, month, day)
+                if parsed_temp.date() < now.date():
+                    year += 1
 
             parsed = datetime(year, month, day)
             return parsed.strftime("%Y-%m-%d")
+
         except ValueError:
             continue
 
@@ -195,7 +195,7 @@ def extract_booking_date(text: str | None, now: datetime | None = None) -> str |
     if not lowered:
         return None
 
-    absolute_date = _extract_date(lowered)
+    absolute_date = _extract_date(lowered, now=now)
     if absolute_date:
         return absolute_date
 
@@ -231,6 +231,91 @@ def _extract_time_token(token: str) -> str | None:
     return None
 
 
+def _add_12_hours_if_needed(time_str: str | None) -> str | None:
+    if not time_str:
+        return None
+
+    hour, minute = map(int, time_str.split(":"))
+
+    if 1 <= hour <= 11:
+        hour += 12
+
+    return _normalize_time(hour, minute)
+
+
+def _apply_day_period_context(
+    text: str,
+    start_time: str | None,
+    end_time: str | None,
+) -> tuple[str | None, str | None]:
+    if not start_time or not end_time:
+        return start_time, end_time
+
+    evening_patterns = [
+        r"\btối\b",
+        r"\btoi\b",
+        r"\btối nay\b",
+        r"\btoi nay\b",
+        r"\btối mai\b",
+        r"\btoi mai\b",
+        r"\bbuổi tối\b",
+        r"\bbuoi toi\b",
+        r"\bevening\b",
+        r"\btonight\b",
+    ]
+
+    afternoon_patterns = [
+        r"\bchiều\b",
+        r"\bchieu\b",
+        r"\bchiều nay\b",
+        r"\bchieu nay\b",
+        r"\bchiều mai\b",
+        r"\bchieu mai\b",
+        r"\bbuổi chiều\b",
+        r"\bbuoi chieu\b",
+        r"\bafternoon\b",
+    ]
+
+    if _match_any_pattern(text, evening_patterns + afternoon_patterns):
+        start_time = _add_12_hours_if_needed(start_time)
+        end_time = _add_12_hours_if_needed(end_time)
+
+    return start_time, end_time
+
+
+def _remove_date_tokens_for_time_parse(text: str) -> str:
+    if not text:
+        return ""
+
+    text = re.sub(
+        r"\b(?:ngày|ngay)\s+\d{1,2}[-/]\d{1,2}(?:[-/]\d{4})?\b",
+        " ",
+        text,
+    )
+
+    text = re.sub(
+        r"\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b",
+        " ",
+        text,
+    )
+
+    text = re.sub(
+        r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b",
+        " ",
+        text,
+    )
+
+    # Xóa ngày dạng 18-6 hoặc 18/6 nếu phía sau còn có từ khóa giờ.
+    # Không xóa bừa để tránh xóa nhầm giờ dạng 9-11.
+    text = re.sub(
+        r"\b\d{1,2}[-/]\d{1,2}\b(?=.*\b(?:từ|tu|from)\b)",
+        " ",
+        text,
+    )
+
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | None]:
     if not text:
         return None, None
@@ -245,16 +330,13 @@ def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | No
         .replace("−", "-")
     )
 
+    lowered = _remove_date_tokens_for_time_parse(lowered)
+
     time_token_pattern = r"\d{1,2}(?::\d{2}|[hg]\d{1,2}|[hg]|時\d{1,2}分?|時)?"
 
     patterns = [
-        # Vietnamese: từ 18:00 đến 18:45 / 18h-20h / 7g-9g
         rf"(?:\btừ\b\s*)?({time_token_pattern})\s*(?:-|\bđến\b|\bden\b|\btới\b|\btoi\b|\bto\b)\s*({time_token_pattern})",
-
-        # English: from 18:00 to 18:45 / 7am to 9am chưa xử lý am-pm, chỉ giữ dạng số
         rf"(?:\bfrom\b\s*)?({time_token_pattern})\s*(?:-|\bto\b|\buntil\b)\s*({time_token_pattern})",
-
-        # Japanese: 18時から18時45分まで / 7時-9時
         rf"({time_token_pattern})\s*(?:から|-)\s*({time_token_pattern})\s*(?:まで)?",
     ]
 
@@ -263,7 +345,16 @@ def extract_time_range_from_text(text: str | None) -> tuple[str | None, str | No
         if not match:
             continue
 
-        return _extract_time_token(match.group(1)), _extract_time_token(match.group(2))
+        start_time = _extract_time_token(match.group(1))
+        end_time = _extract_time_token(match.group(2))
+
+        start_time, end_time = _apply_day_period_context(
+            lowered,
+            start_time,
+            end_time,
+        )
+
+        return start_time, end_time
 
     return None, None
 
