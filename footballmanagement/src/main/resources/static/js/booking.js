@@ -106,7 +106,7 @@
         title: `${window.i18n.booked} (${formatTime(s.startAt)} - ${formatTime(s.endAt)})`,
         start: start.toISOString(),
         end: end.toISOString(),
-        color: "#f97316", // cam
+        color: "#10b981", // xanh lá
         description: window.i18n.booked
       });
     });
