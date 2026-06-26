@@ -389,9 +389,17 @@ refreshInterval = setInterval(async () => {
     window.location.href = `/user/bookingsummary?id=${booking.id}`;
 
       } else {
-        const errMsg = await res.text();
-        alert("Booking thất bại! " + errMsg);
-        console.error("Booking API error:", errMsg);
+        let msg = "Booking thất bại!";
+
+  try {
+    const errBody = await res.json();
+    msg = errBody.message || msg;
+  } catch {
+    msg = "Khung giờ này đang không khả dụng";
+  }
+
+  alert(msg);
+  console.error("Booking API error:", msg);
       }
     } catch (err) {
       console.error(err);

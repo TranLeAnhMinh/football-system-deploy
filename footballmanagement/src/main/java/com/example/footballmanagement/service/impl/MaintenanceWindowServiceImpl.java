@@ -1,7 +1,6 @@
 package com.example.footballmanagement.service.impl;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -116,23 +115,29 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
             throw new ApiException(ErrorCode.MAINTENANCE_CONFLICT);
         }
 
-        var overlappedSlots = bookingSlotRepo.findApprovedByPitch_IdAndRange(
-                req.getPitchId(),
-                req.getStartAt(),
-                req.getEndAt()
-        );
+        var overlappedSlots = bookingSlotRepo.findOccupiedByPitch_IdAndRange(
+        req.getPitchId(),
+        req.getStartAt(),
+        req.getEndAt()
+);
 
-        List<Booking> affectedBookings = new ArrayList<>();
+boolean hasPending = overlappedSlots.stream()
+        .anyMatch(slot -> slot.getBooking().getStatus() == BookingStatus.PENDING);
 
-        if (!overlappedSlots.isEmpty()) {
-            affectedBookings = overlappedSlots.stream()
-                    .map(slot -> slot.getBooking())
-                    .distinct()
-                    .toList();
+if (hasPending) {
+    throw new ApiException(ErrorCode.PENDING_BOOKING_CONFLICT);
+}
 
-            affectedBookings.forEach(booking -> booking.setStatus(BookingStatus.WAITING_REFUND));
-            bookingRepo.saveAll(affectedBookings);
-        }
+List<Booking> affectedBookings = overlappedSlots.stream()
+        .map(slot -> slot.getBooking())
+        .filter(booking -> booking.getStatus() == BookingStatus.APPROVED)
+        .distinct()
+        .toList();
+
+if (!affectedBookings.isEmpty()) {
+    affectedBookings.forEach(booking -> booking.setStatus(BookingStatus.WAITING_REFUND));
+    bookingRepo.saveAll(affectedBookings);
+}
 
         MaintenanceWindow window = MaintenanceWindow.builder()
                 .pitch(pitch)

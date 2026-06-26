@@ -56,6 +56,8 @@ BOOKING_TIME_IN_PAST(HttpStatus.BAD_REQUEST, "Không thể đặt sân ở thờ
 INVALID_BOOKING_TIME(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu phải trước thời gian kết thúc"),
 MAINTENANCE_TIME_IN_PAST(HttpStatus.BAD_REQUEST, "Không thể tạo lịch bảo trì trong quá khứ"),
 INVALID_MAINTENANCE_TIME(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu phải trước thời gian kết thúc"),
+BOOKING_SLOT_UNAVAILABLE(HttpStatus.CONFLICT, "Khung giờ này đang không khả dụng"),
+PENDING_BOOKING_CONFLICT(HttpStatus.CONFLICT, "Có khách hàng đang giữ chỗ trong khung giờ này"),
 VOUCHER_ALREADY_USED(HttpStatus.BAD_REQUEST, "Voucher has already been used and cannot be deleted");
 
 

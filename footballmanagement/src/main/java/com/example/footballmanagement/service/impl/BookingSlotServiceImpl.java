@@ -11,6 +11,8 @@ import com.example.footballmanagement.dto.request.BookingSlotRequest;
 import com.example.footballmanagement.dto.response.BookingSlotResponse;
 import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.BookingSlot;
+import com.example.footballmanagement.exception.ApiException;
+import com.example.footballmanagement.exception.ErrorCode;
 import com.example.footballmanagement.repository.BookingSlotRepository;
 import com.example.footballmanagement.service.BookingSlotService;
 import com.example.footballmanagement.service.MaintenanceWindowService;
@@ -71,8 +73,8 @@ public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking 
                 }
 
                 if (existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
-                    throw new IllegalArgumentException("Slot overlaps with another booking");
-                }
+    throw new ApiException(ErrorCode.BOOKING_SLOT_UNAVAILABLE);
+}
 
                 if (maintenanceWindowService.existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
                     throw new IllegalArgumentException("Pitch is under maintenance in this period");
