@@ -13,4 +13,5 @@ public class BookingSlotResponse {
     private final OffsetDateTime startAt;
     private final OffsetDateTime endAt;
     private final boolean checkedIn;
+    private final String status;
 }

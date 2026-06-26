@@ -4,6 +4,9 @@
   let calendar = null;
   let previewEvents = []; // 🔥 highlight preview
   let pendingBooking = null; // 🔥 giữ booking tạm
+
+let isRefreshing = false;
+let refreshInterval = null;
   console.log("✅ PITCH_ID:", window.PITCH_ID);
 
   // ✅ helper: format local datetime + offset (+07:00)
@@ -100,16 +103,30 @@
     });
 
     slots.forEach(s => {
-      const start = new Date(s.startAt);
-      const end = new Date(s.endAt);
-      calendar.addEvent({
-        title: `${window.i18n.booked} (${formatTime(s.startAt)} - ${formatTime(s.endAt)})`,
-        start: start.toISOString(),
-        end: end.toISOString(),
-        color: "#10b981", // xanh lá
-        description: window.i18n.booked
-      });
-    });
+  const start = new Date(s.startAt);
+  const end = new Date(s.endAt);
+
+  const isPending = s.status === "PENDING";
+
+  calendar.addEvent({
+    title: isPending
+      ? `Đang giữ chỗ (${formatTime(s.startAt)} - ${formatTime(s.endAt)})`
+      : `${window.i18n.booked} (${formatTime(s.startAt)} - ${formatTime(s.endAt)})`,
+
+    start: start.toISOString(),
+    end: end.toISOString(),
+
+    color: isPending ? "#facc15" : "#10b981",
+
+    description: isPending
+      ? "Sân này đang được giữ chỗ trong 20 phút"
+      : window.i18n.booked,
+
+    extendedProps: {
+      status: s.status
+    }
+  });
+});
   }
 
   // Format giờ HH:mm
@@ -140,10 +157,45 @@
             container: "body"
           });
         }
-      }
+      },
+      eventClick: function(info) {
+  const status = info.event.extendedProps.status;
+
+  if (status === "PENDING") {
+    alert("Sân này đang được giữ chỗ trong 20 phút");
+  } else if (status === "APPROVED") {
+    alert("Sân này đã được đặt");
+  } else if (info.event.extendedProps.description) {
+    alert(info.event.extendedProps.description);
+  }
+}
+
+      
     });
     calendar.render();
-    loadSlots();
+
+// Load lần đầu
+loadSlots();
+
+// Nếu đã có interval cũ thì xóa
+if (refreshInterval) {
+    clearInterval(refreshInterval);
+}
+
+// Refresh mỗi 30 giây
+refreshInterval = setInterval(async () => {
+    if (isRefreshing) return;
+
+    isRefreshing = true;
+
+    try {
+        await loadSlots();
+    } catch (err) {
+        console.error("Refresh calendar failed:", err);
+    } finally {
+        isRefreshing = false;
+    }
+}, 30000);
   }
 
   // Sinh danh sách mốc giờ 45 phút
@@ -235,7 +287,7 @@
         title: "Preview",
         start: start.toISOString(),
         end: end.toISOString(),
-        color: "green",
+        color: "#3b82f6",
         description: "Preview"
       });
       previewEvents.push(ev);

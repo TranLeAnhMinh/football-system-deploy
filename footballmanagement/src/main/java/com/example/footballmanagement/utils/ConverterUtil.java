@@ -146,6 +146,7 @@ public class ConverterUtil {
                 .startAt(slot.getStartAt())
                 .endAt(slot.getEndAt())
                 .checkedIn(slot.getCheckedInAt() != null)
+                .status(slot.getBooking().getStatus().name())
                 .build();
     }
 

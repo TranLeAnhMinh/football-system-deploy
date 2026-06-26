@@ -98,7 +98,7 @@ public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking 
     // ✅ Lấy toàn bộ slot cho calendar
     @Override
     public List<BookingSlotResponse> getByPitch(UUID pitchId) {
-        return slotRepo.findApprovedByPitch_Id(pitchId)
+        return slotRepo.findOccupiedByPitch_Id(pitchId)
                 .stream()
                 .map(ConverterUtil::toBookingSlotResponse)
                 .toList();
@@ -107,7 +107,7 @@ public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking 
     // ✅ Lấy slot theo khoảng thời gian
     @Override
     public List<BookingSlotResponse> getByPitchAndRange(UUID pitchId, OffsetDateTime from, OffsetDateTime to) {
-        return slotRepo.findApprovedByPitch_IdAndRange(pitchId, from, to)
+        return slotRepo.findOccupiedByPitch_IdAndRange(pitchId, from, to)
                 .stream()
                 .map(ConverterUtil::toBookingSlotResponse)
                 .toList();

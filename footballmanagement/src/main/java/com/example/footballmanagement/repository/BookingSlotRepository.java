@@ -61,4 +61,25 @@ boolean existsOverlap(UUID pitchId, OffsetDateTime startAt, OffsetDateTime endAt
             OffsetDateTime startAt,
             OffsetDateTime endAt
     );
+
+    // Lấy slot đang chiếm sân: PENDING hoặc APPROVED
+@Query("""
+    SELECT s FROM BookingSlot s
+    WHERE s.pitch.id = :pitchId
+      AND s.booking.status IN ('PENDING','APPROVED')
+""")
+List<BookingSlot> findOccupiedByPitch_Id(UUID pitchId);
+
+@Query("""
+    SELECT s FROM BookingSlot s
+    WHERE s.pitch.id = :pitchId
+      AND s.endAt > :from
+      AND s.startAt < :to
+      AND s.booking.status IN ('PENDING','APPROVED')
+""")
+List<BookingSlot> findOccupiedByPitch_IdAndRange(
+        UUID pitchId,
+        OffsetDateTime from,
+        OffsetDateTime to
+);
 }
