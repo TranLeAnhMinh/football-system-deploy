@@ -236,18 +236,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const overlapData = await overlapRes.json();
 
-      if (overlapData.conflict && overlapData.overlaps.length > 0) {
-        const list = overlapData.overlaps
-          .map(
-            (o) =>
-              `• ${o.userName} (${formatDate(o.startAt)} → ${formatDate(o.endAt)})`
-          )
-          .join("\n");
+     if (overlapData.conflict && overlapData.overlaps.length > 0) {
+  const hasPending = overlapData.overlaps.some(o => o.status === "PENDING");
 
-        if (!confirm(`${window.i18n.confirmOverlap}\n\n${list}`)) {
-          return;
-        }
-      }
+  if (hasPending) {
+    alert("Có khách hàng đang giữ chỗ trong khung giờ này");
+    return;
+  }
+
+  const list = overlapData.overlaps
+    .map(
+      (o) =>
+        `• ${o.userName} (${formatDate(o.startAt)} → ${formatDate(o.endAt)})`
+    )
+    .join("\n");
+
+  if (!confirm(`${window.i18n.confirmOverlap}\n\n${list}`)) return;
+}
 
       const res = await fetch(`/api/pitches/${pitchId}/maintenance-windows`, {
         method: "POST",
