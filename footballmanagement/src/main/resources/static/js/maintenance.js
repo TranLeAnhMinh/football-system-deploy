@@ -2,6 +2,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pitchId = window.PITCH_ID;
   const token = localStorage.getItem("accessToken");
 
+  let calendar;
+  let isRefreshing = false;
+  let refreshInterval = null;
+
+  function showToast(msg, type = "success") {
+    const box = document.createElement("div");
+    box.className = `toast ${type}`;
+    box.textContent = msg;
+    document.getElementById("toast-container").appendChild(box);
+    setTimeout(() => box.remove(), 3500);
+  }
+
   if (!pitchId || !token) {
     showToast("⚠️ Thiếu thông tin xác thực hoặc sân!", "error");
     return;
@@ -9,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const authHeaders = { Authorization: "Bearer " + token };
   const calendarEl = document.getElementById("calendar");
-  let calendar;
 
   /* ---------- Helper ---------- */
   const formatDate = (str) =>
@@ -21,9 +32,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       month: "2-digit",
     });
 
-  // ✅ Chuyển local time thành OffsetDateTime chuẩn (VD: +07:00)
   function toOffsetDateTimeLocal(datetime) {
     if (!datetime) return "";
+
     const date = new Date(datetime);
     const tzOffsetMin = -date.getTimezoneOffset();
     const sign = tzOffsetMin >= 0 ? "+" : "-";
@@ -41,28 +52,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `${year}-${month}-${day}T${hour}:${minute}:${second}${sign}${hoursOffset}:${minutesOffset}`;
   }
 
-  // ✅ Hiển thị local time đúng trong calendar
   function convertToLocal(isoString) {
     if (!isoString) return isoString;
+
     const date = new Date(isoString);
+
     return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
       .toISOString()
       .slice(0, 19);
-  }
-
-  function showToast(msg, type = "success") {
-    const box = document.createElement("div");
-    box.className = `toast ${type}`;
-    box.textContent = msg;
-    document.getElementById("toast-container").appendChild(box);
-    setTimeout(() => box.remove(), 3500);
   }
 
   /* ---------- Load Events ---------- */
   async function loadEvents() {
     try {
       const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const from = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      ).toISOString();
+
       const to = new Date(
         now.getFullYear(),
         now.getMonth() + 1,
@@ -81,6 +90,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }),
       ]);
 
+      if (!mwRes.ok || !slotRes.ok) {
+        throw new Error("Load calendar events failed");
+      }
+
       const mws = await mwRes.json();
       const slots = await slotRes.json();
 
@@ -90,30 +103,59 @@ document.addEventListener("DOMContentLoaded", async () => {
       mws.forEach((m) => {
         calendar.addEvent({
           id: m.id,
-          title: m.reason,
+          title: m.reason || window.i18n.maintenance,
           start: convertToLocal(m.startAt),
           end: convertToLocal(m.endAt),
-          color: "#ef4444",
-          description: `${window.i18n.maintenance}: ${m.reason}`,
+          backgroundColor: "#ef4444",
+          borderColor: "#dc2626",
+          textColor: "#ffffff",
+          description: `${window.i18n.maintenance}: ${m.reason || ""}`,
         });
       });
 
-      // 🟧 Booking
+      // 🟨 PENDING / 🟩 APPROVED
       slots.forEach((s) => {
+        const isPending = s.status === "PENDING";
+
         calendar.addEvent({
           id: s.id,
-          title: s.userFullName || "Đã đặt",
+          title: isPending
+            ? "Đang giữ chỗ"
+            : s.userFullName || "Đã đặt",
+
           start: convertToLocal(s.startAt),
           end: convertToLocal(s.endAt),
-          color: "#f59e0b",
-          description: `Booking: ${formatDate(s.startAt)} → ${formatDate(
-            s.endAt
-          )}`,
+
+          backgroundColor: isPending ? "#facc15" : "#10b981",
+          borderColor: isPending ? "#eab308" : "#059669",
+          textColor: isPending ? "#000000" : "#ffffff",
+
+          description: isPending
+            ? `Đang giữ chỗ: ${formatDate(s.startAt)} → ${formatDate(s.endAt)}`
+            : `Booking: ${formatDate(s.startAt)} → ${formatDate(s.endAt)}`,
+
+          extendedProps: {
+            status: s.status,
+          },
         });
       });
     } catch (err) {
       console.error("❌ Lỗi load events:", err);
       showToast(window.i18n.error, "error");
+    }
+  }
+
+  async function refreshEventsSafely() {
+    if (isRefreshing) return;
+
+    isRefreshing = true;
+
+    try {
+      await loadEvents();
+    } catch (err) {
+      console.error("Refresh calendar failed:", err);
+    } finally {
+      isRefreshing = false;
     }
   }
 
@@ -128,24 +170,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       center: "title",
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
-    eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+    eventTimeFormat: {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
     eventDidMount(info) {
-      new bootstrap.Tooltip(info.el, {
-        title: info.event.extendedProps.description,
-        placement: "top",
-        trigger: "hover",
-        container: "body",
-      });
+      if (info.event.extendedProps.description) {
+        new bootstrap.Tooltip(info.el, {
+          title: info.event.extendedProps.description,
+          placement: "top",
+          trigger: "hover",
+          container: "body",
+        });
+      }
+
       info.el.style.opacity = "0";
-      setTimeout(() => (info.el.style.opacity = "1"), 50);
+      setTimeout(() => {
+        info.el.style.opacity = "1";
+      }, 50);
     },
   });
 
   calendar.render();
-  await loadEvents();
+
+  // Load lần đầu an toàn
+  await refreshEventsSafely();
+
+  // Nếu đã có interval cũ thì xóa
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+
+  // Refresh mỗi 30 giây
+  refreshInterval = setInterval(refreshEventsSafely, 30000);
 
   /* ---------- Submit Form ---------- */
   const form = document.getElementById("maintenanceForm");
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -162,56 +224,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     const endAt = toOffsetDateTimeLocal(endInput);
 
     try {
-      // 🔍 Kiểm tra trùng booking
       const overlapRes = await fetch(
         `/api/pitches/${pitchId}/maintenance-windows/check-overlap?` +
           new URLSearchParams({ startAt, endAt }),
         { headers: authHeaders }
       );
 
-      if (!overlapRes.ok) throw new Error("Check overlap failed");
+      if (!overlapRes.ok) {
+        throw new Error("Check overlap failed");
+      }
 
       const overlapData = await overlapRes.json();
+
       if (overlapData.conflict && overlapData.overlaps.length > 0) {
         const list = overlapData.overlaps
           .map(
             (o) =>
-              `• ${o.userName} (${formatDate(o.startAt)} → ${formatDate(
-                o.endAt
-              )})`
+              `• ${o.userName} (${formatDate(o.startAt)} → ${formatDate(o.endAt)})`
           )
           .join("\n");
-        if (!confirm(`${window.i18n.confirmOverlap}\n\n${list}`)) return;
+
+        if (!confirm(`${window.i18n.confirmOverlap}\n\n${list}`)) {
+          return;
+        }
       }
 
-      // ✅ Gửi request tạo maintenance
       const res = await fetch(`/api/pitches/${pitchId}/maintenance-windows`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ pitchId, startAt, endAt, reason }),
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          pitchId,
+          startAt,
+          endAt,
+          reason,
+        }),
       });
 
       if (!res.ok) {
         let msg = "❌ Đã xảy ra lỗi, vui lòng thử lại!";
+
         try {
           const errText = await res.text();
           console.error("❌ Server response:", errText);
+
           const errBody = JSON.parse(errText);
           msg = errBody.message || msg;
         } catch {
-          if (res.status === 409) msg = "⚠️ Khung giờ bảo trì bị trùng!";
+          if (res.status === 409) {
+            msg = "⚠️ Khung giờ bảo trì bị trùng!";
+          }
         }
+
         showToast(msg, "error");
-        alert(msg); // ✅ fallback chắc chắn hiển thị
+        alert(msg);
         return;
       }
 
-      // ✅ Thành công
       bootstrap.Modal.getInstance(
         document.getElementById("maintenanceModal")
       ).hide();
+
       showToast("✅ " + window.i18n.success, "success");
-      await loadEvents();
+
+      await refreshEventsSafely();
     } catch (err) {
       console.error("❌ Lỗi khi tạo maintenance:", err);
       showToast("❌ " + window.i18n.error, "error");
