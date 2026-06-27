@@ -25,7 +25,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(code.getStatus()).body(response);
     }
 
-    // fallback cho lỗi chưa handle
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+
+        if (message != null && message.contains("no_overlap_booking_slot")) {
+            return buildErrorResponse(ErrorCode.BOOKING_OVERLAP);
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message("Đã có lỗi xảy ra, vui lòng kiểm tra lại.")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
         ErrorResponse response = ErrorResponse.builder()
@@ -37,15 +56,15 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.internalServerError().body(response);
     }
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+
+    private ResponseEntity<ErrorResponse> buildErrorResponse(ErrorCode code) {
         ErrorResponse response = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request")
-                .message("Đã có lỗi xảy ra, vui lòng kiểm tra lại.")
+                .status(code.getStatus().value())
+                .error(code.getStatus().getReasonPhrase())
+                .message(code.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(code.getStatus()).body(response);
     }
 }
