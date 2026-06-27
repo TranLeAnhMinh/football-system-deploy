@@ -1,11 +1,16 @@
 package com.example.footballmanagement.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.persistence.LockModeType;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.footballmanagement.entity.Pitch;
@@ -47,4 +52,10 @@ public interface PitchRepository extends JpaRepository<Pitch, UUID> {
             "images"
     })
     Pitch findWithDetailById(UUID id);
+
+
+    // 🔒 Lock sân khi tạo booking hoặc tạo lịch bảo trì để tránh race condition
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT p FROM Pitch p WHERE p.id = :id")
+Optional<Pitch> findByIdForUpdate(@Param("id") UUID id);
 }

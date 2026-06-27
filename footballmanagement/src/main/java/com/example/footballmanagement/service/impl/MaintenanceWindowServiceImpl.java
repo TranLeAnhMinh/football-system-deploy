@@ -96,8 +96,9 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
             throw new ApiException(ErrorCode.USER_INACTIVE);
         }
 
-        Pitch pitch = pitchRepo.findById(req.getPitchId())
-                .orElseThrow(() -> new ApiException(ErrorCode.PITCH_NOT_FOUND));
+        // 🔒 Lock pitch trong suốt transaction để tránh race condition
+Pitch pitch = pitchRepo.findByIdForUpdate(req.getPitchId())
+        .orElseThrow(() -> new ApiException(ErrorCode.PITCH_NOT_FOUND));
 
         if (pitch.getBranch() == null ||
                 pitch.getBranch().getAdmin() == null ||

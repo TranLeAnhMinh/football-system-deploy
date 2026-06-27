@@ -22,10 +22,10 @@ import com.example.footballmanagement.entity.enums.BookingStatus;
 import com.example.footballmanagement.exception.ErrorCode;
 import com.example.footballmanagement.exception.custom.VoucherException;
 import com.example.footballmanagement.repository.BookingRepository;
+import com.example.footballmanagement.repository.PitchRepository;
 import com.example.footballmanagement.repository.UserRepository;
 import com.example.footballmanagement.service.BookingService;
 import com.example.footballmanagement.service.BookingSlotService;
-import com.example.footballmanagement.service.PitchService;
 import com.example.footballmanagement.service.PricingService;
 import com.example.footballmanagement.service.VoucherService;
 import com.example.footballmanagement.service.VoucherUsageService;
@@ -39,9 +39,9 @@ public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepo;
     private final BookingSlotService slotService;
-    private final PitchService pitchService;
     private final PricingService pricingService;
     private final UserRepository userRepo;
+    private final PitchRepository pitchRepo;
     private final VoucherService voucherService;
     private final VoucherUsageService voucherUsageService;
 
@@ -51,7 +51,9 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Pitch pitch = pitchService.getPitchEntity(request.getPitchId());
+        // 🔒 Lock sân trong transaction để tránh race condition với luồng tạo lịch bảo trì
+        Pitch pitch = pitchRepo.findByIdForUpdate(request.getPitchId())
+                .orElseThrow(() -> new IllegalArgumentException("Pitch not found"));
 
         Booking booking = Booking.builder()
                 .user(user)
