@@ -17,13 +17,18 @@ import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.BookingSlot;
 import com.example.footballmanagement.entity.Pitch;
 import com.example.footballmanagement.entity.User;
+import com.example.footballmanagement.entity.Voucher;
 import com.example.footballmanagement.entity.enums.BookingStatus;
+import com.example.footballmanagement.exception.ErrorCode;
+import com.example.footballmanagement.exception.custom.VoucherException;
 import com.example.footballmanagement.repository.BookingRepository;
 import com.example.footballmanagement.repository.UserRepository;
 import com.example.footballmanagement.service.BookingService;
 import com.example.footballmanagement.service.BookingSlotService;
 import com.example.footballmanagement.service.PitchService;
 import com.example.footballmanagement.service.PricingService;
+import com.example.footballmanagement.service.VoucherService;
+import com.example.footballmanagement.service.VoucherUsageService;
 import com.example.footballmanagement.utils.ConverterUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +42,8 @@ public class BookingServiceImpl implements BookingService {
     private final PitchService pitchService;
     private final PricingService pricingService;
     private final UserRepository userRepo;
+    private final VoucherService voucherService;
+    private final VoucherUsageService voucherUsageService;
 
     @Override
     @Transactional
@@ -66,9 +73,25 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setFinalPrice(pricing.getFinalPrice());
 
-        bookingRepo.save(booking);
+        Booking savedBooking = bookingRepo.save(booking);
 
-        return ConverterUtil.toBookingResponse(booking, pricing);
+        if (request.getVoucherCode() != null
+                && !request.getVoucherCode().isBlank()
+                && pricing.getVoucherDiscount() != null
+                && pricing.getVoucherDiscount().signum() > 0) {
+
+            Voucher voucher = voucherService.findActiveByCode(request.getVoucherCode())
+                    .orElseThrow(() -> new VoucherException(ErrorCode.VOUCHER_NOT_FOUND));
+
+            voucherUsageService.createUsage(
+                    voucher,
+                    user,
+                    savedBooking,
+                    pricing.getVoucherDiscount()
+            );
+        }
+
+        return ConverterUtil.toBookingResponse(savedBooking, pricing);
     }
 
     @Override
