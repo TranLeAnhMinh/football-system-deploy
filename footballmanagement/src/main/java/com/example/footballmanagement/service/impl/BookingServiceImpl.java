@@ -57,7 +57,7 @@ public class BookingServiceImpl implements BookingService {
         List<BookingSlot> slots = slotService.createSlots(request.getSlots(), booking);
         booking.setSlots(slots);
 
-        var pricing = pricingService.calculatePrice(
+        BookingPriceResponse pricing = pricingService.calculatePrice(
                 pitch.getId(),
                 request.getSlots(),
                 request.getVoucherCode(),
@@ -77,8 +77,9 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepo.findBookingDetailById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
-        var pricing = BookingPriceResponse.builder()
+        BookingPriceResponse pricing = BookingPriceResponse.builder()
                 .basePrice(null)
+                .priceRuleDiscount(null)
                 .voucherDiscount(null)
                 .finalPrice(booking.getFinalPrice())
                 .currency("VND")

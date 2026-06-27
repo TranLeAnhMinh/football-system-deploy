@@ -9,6 +9,10 @@
     "NO_SHOW": window.i18n["status.no_show"]
   };
 
+  function toNumber(value) {
+    return Number(value || 0);
+  }
+
   function loadBooking() {
     const bookingStr = localStorage.getItem("lastBooking");
     const box = document.getElementById("summaryBox");
@@ -26,6 +30,17 @@
       box.innerHTML = `<p>${window.i18n.error}: Error parsing booking!</p>`;
       return;
     }
+
+    const pricing = booking.pricing || {};
+
+    const basePrice = toNumber(pricing.basePrice);
+    const voucherDiscount = toNumber(pricing.voucherDiscount);
+    const finalPrice = toNumber(pricing.finalPrice);
+
+    const priceRuleDiscount =
+      pricing.priceRuleDiscount !== undefined && pricing.priceRuleDiscount !== null
+        ? toNumber(pricing.priceRuleDiscount)
+        : Math.max(basePrice - voucherDiscount - finalPrice, 0);
 
     box.innerHTML = `
       <h2 class="summary-header">${window.i18n["booking.summary.title"]}</h2>
@@ -60,27 +75,27 @@
       <div class="summary-card">
         <div class="card-header">${window.i18n["booking.summary.pricing"]}</div>
         <div class="card-body">
-         <table class="pricing-table">
-  <tr>
-    <th>${window.i18n["booking.summary.price.base"]}</th>
-    <td>${booking.pricing.basePrice} VND</td>
-  </tr>
+          <table class="pricing-table">
+            <tr>
+              <th>${window.i18n["booking.summary.price.base"]}</th>
+              <td>${basePrice} VND</td>
+            </tr>
 
-  <tr>
-    <th>${window.i18n["booking.summary.price.ruleDiscount"]}</th>
-    <td>- ${booking.pricing.priceRuleDiscount || 0} VND</td>
-  </tr>
+            <tr>
+              <th>${window.i18n["booking.summary.price.ruleDiscount"]}</th>
+              <td>- ${priceRuleDiscount} VND</td>
+            </tr>
 
-  <tr>
-    <th>${window.i18n["booking.summary.price.discount"]}</th>
-    <td>- ${booking.pricing.voucherDiscount || 0} VND</td>
-  </tr>
+            <tr>
+              <th>${window.i18n["booking.summary.price.discount"]}</th>
+              <td>- ${voucherDiscount} VND</td>
+            </tr>
 
-  <tr>
-    <th>${window.i18n["booking.summary.price.final"]}</th>
-    <td class="pricing-final">${booking.pricing.finalPrice} VND</td>
-  </tr>
-</table>
+            <tr>
+              <th>${window.i18n["booking.summary.price.final"]}</th>
+              <td class="pricing-final">${finalPrice} VND</td>
+            </tr>
+          </table>
         </div>
       </div>
 
