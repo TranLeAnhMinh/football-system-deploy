@@ -60,11 +60,27 @@
       <div class="summary-card">
         <div class="card-header">${window.i18n["booking.summary.pricing"]}</div>
         <div class="card-body">
-          <table class="pricing-table">
-            <tr><th>${window.i18n["booking.summary.price.base"]}</th><td>${booking.pricing.basePrice} VND</td></tr>
-            <tr><th>${window.i18n["booking.summary.price.discount"]}</th><td>- ${booking.pricing.voucherDiscount} VND</td></tr>
-            <tr><th>${window.i18n["booking.summary.price.final"]}</th><td class="pricing-final">${booking.pricing.finalPrice} VND</td></tr>
-          </table>
+         <table class="pricing-table">
+  <tr>
+    <th>${window.i18n["booking.summary.price.base"]}</th>
+    <td>${booking.pricing.basePrice} VND</td>
+  </tr>
+
+  <tr>
+    <th>${window.i18n["booking.summary.price.ruleDiscount"]}</th>
+    <td>- ${booking.pricing.priceRuleDiscount || 0} VND</td>
+  </tr>
+
+  <tr>
+    <th>${window.i18n["booking.summary.price.discount"]}</th>
+    <td>- ${booking.pricing.voucherDiscount || 0} VND</td>
+  </tr>
+
+  <tr>
+    <th>${window.i18n["booking.summary.price.final"]}</th>
+    <td class="pricing-final">${booking.pricing.finalPrice} VND</td>
+  </tr>
+</table>
         </div>
       </div>
 
