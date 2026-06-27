@@ -82,11 +82,6 @@
             </tr>
 
             <tr>
-              <th>${window.i18n["booking.summary.price.ruleDiscount"]}</th>
-              <td>- ${priceRuleDiscount} VND</td>
-            </tr>
-
-            <tr>
               <th>${window.i18n["booking.summary.price.discount"]}</th>
               <td>- ${voucherDiscount} VND</td>
             </tr>
