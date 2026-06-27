@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class VoucherServiceImpl implements VoucherService {
 
     private final VoucherRepository voucherRepo;
-    private final VoucherUsageService usageService; // ✅ thay vì gọi repo trực tiếp
+    private final VoucherUsageService usageService;
 
     @Override
     public Optional<Voucher> findActiveByCode(String code) {
@@ -33,13 +33,13 @@ public class VoucherServiceImpl implements VoucherService {
                 .filter(v -> {
                     OffsetDateTime now = OffsetDateTime.now();
                     return (v.getStartAt() == null || !now.isBefore(v.getStartAt()))
-                    && (v.getEndAt() == null || !now.isAfter(v.getEndAt()));
-            });
+                            && (v.getEndAt() == null || !now.isAfter(v.getEndAt()));
+                });
     }
 
     @Override
-    public void validateVoucher(Voucher voucher, UUID userId, BigDecimal orderAmount,OffsetDateTime bookingDate) {
-       
+    public void validateVoucher(Voucher voucher, UUID userId, BigDecimal orderAmount, OffsetDateTime bookingDate) {
+
         if (!voucher.isActive()) {
             throw new VoucherException(ErrorCode.VOUCHER_INACTIVE);
         }
@@ -52,18 +52,13 @@ public class VoucherServiceImpl implements VoucherService {
             throw new VoucherException(ErrorCode.VOUCHER_EXPIRED);
         }
 
-        if (voucher.getMinOrder() != null &&
-                orderAmount.compareTo(voucher.getMinOrder()) < 0) {
+        if (voucher.getMinOrder() != null && orderAmount.compareTo(voucher.getMinOrder()) < 0) {
             throw new VoucherException(ErrorCode.VOUCHER_MIN_ORDER);
         }
 
-        if (voucher.getPerUserLimit() != null) {
-            long usedCount = usageService.countUsageByUser(userId, voucher.getId()); // ✅ gọi service
-
-            if (usedCount >= voucher.getPerUserLimit()) {
-                throw new VoucherException(ErrorCode.VOUCHER_LIMIT_REACHED);
-            }
-        }
+        // Không check perUserLimit ở đây để tránh race condition.
+        // perUserLimit được check trong VoucherUsageServiceImpl.createUsage()
+        // sau khi lock voucher bằng PESSIMISTIC_WRITE.
     }
 
     @Override
@@ -73,10 +68,10 @@ public class VoucherServiceImpl implements VoucherService {
         return voucherRepo.findAllValidVouchers(now).stream()
                 .filter(v -> {
                     if (v.getPerUserLimit() != null) {
-                        long usedCount = usageService.countUsageByUser(userId, v.getId()); // ✅ gọi service
+                        long usedCount = usageService.countUsageByUser(userId, v.getId());
                         return usedCount < v.getPerUserLimit();
                     }
-                    return true; // không giới hạn -> luôn khả dụng
+                    return true;
                 })
                 .map(ConverterUtil::toVoucherResponse)
                 .collect(Collectors.toList());

@@ -6,18 +6,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.example.footballmanagement.entity.Voucher;
 
+import jakarta.persistence.LockModeType;
+
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
 
-    // ✅ Tìm voucher theo code và phải active
     Optional<Voucher> findByCodeAndActiveTrue(String code);
 
-    // ✅ Lấy tất cả voucher active, còn hiệu lực theo thời gian
     @Query("""
         SELECT v
         FROM Voucher v
@@ -26,11 +27,14 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
           AND (v.endAt IS NULL OR v.endAt >= :now)
     """)
     List<Voucher> findAllValidVouchers(OffsetDateTime now);
+
     boolean existsByCode(String code);
 
-    // 🔹 Check tồn tại voucher đang active (phục vụ xóa mềm)
-boolean existsByIdAndActiveTrue(UUID id);
+    boolean existsByIdAndActiveTrue(UUID id);
 
-// 🔹 Admin xem toàn bộ voucher (kể cả inactive / hết hạn)
-List<Voucher> findAllByOrderByCreatedAtDesc();
+    List<Voucher> findAllByOrderByCreatedAtDesc();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Voucher v WHERE v.id = :id")
+    Optional<Voucher> findByIdForUpdate(UUID id);
 }
