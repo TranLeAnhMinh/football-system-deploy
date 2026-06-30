@@ -9,9 +9,13 @@ public interface AdminVoucherService {
 
     // ✅ Chỉ ADMIN_SYSTEM được tạo voucher
     Voucher createVoucher(Voucher voucher, UUID currentUserId);
-    // 🔹 Xóa mềm voucher (ADMIN_SYSTEM)
-    void deleteVoucher(UUID voucherId, UUID currentUserId);
+    // Toggle chuyển
+    void toggleVoucherActive(UUID voucherId, UUID currentUserId);
 
     List<Voucher> getAllVouchers(UUID currentUserId);
+
+    void hardDeleteVoucher(UUID voucherId, UUID currentUserId);
+    
+    Voucher updateVoucher(UUID voucherId, Voucher voucher, UUID currentUserId);
 
 }

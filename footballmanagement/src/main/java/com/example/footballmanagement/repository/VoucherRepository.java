@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -37,4 +38,16 @@ public interface VoucherRepository extends JpaRepository<Voucher, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT v FROM Voucher v WHERE v.id = :id")
     Optional<Voucher> findByIdForUpdate(UUID id);
+
+    boolean existsByCodeAndIdNot(String code, UUID id);
+
+    @Modifying
+@Query("""
+    UPDATE Voucher v
+    SET v.active = false
+    WHERE v.active = true
+      AND v.endAt IS NOT NULL
+      AND v.endAt < :now
+""")
+int deactivateExpiredVouchers(OffsetDateTime now);
 }

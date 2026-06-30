@@ -9,7 +9,6 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Bootstrap -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
@@ -18,13 +17,10 @@
 
 <div class="home-container">
 
-    <!-- SIDEBAR -->
     <div th:replace="layouts/adminsystemsidebar :: adminSystemSidebar"></div>
 
-    <!-- MAIN -->
     <div class="main-content">
 
-        <!-- HEADER -->
         <div class="voucher-header">
             <h2 th:text="#{sidebar.admin.vouchers}">Voucher</h2>
 
@@ -34,7 +30,6 @@
             </button>
         </div>
 
-        <!-- LIST -->
         <div class="voucher-list" id="voucherContainer">
             <!-- JS render -->
         </div>
@@ -124,6 +119,92 @@
         </div>
     </div>
 </div>
+
+<!-- ================= MODAL: EDIT VOUCHER ================= -->
+<div class="modal fade" id="editVoucherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form id="editVoucherForm">
+
+                <input type="hidden" name="voucherId">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" th:text="#{voucher.edit}">
+                        Edit Voucher
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <label class="form-label" th:text="#{voucher.code}">Code</label>
+                    <input name="code"
+                           class="form-control"
+                           th:placeholder="#{voucher.code}"
+                           required>
+
+                    <label class="form-label mt-2" th:text="#{voucher.type}">Type</label>
+                    <select name="type" class="form-select" required>
+                        <option value="PERCENT">Percent</option>
+                        <option value="FIXED">Fixed</option>
+                    </select>
+
+                    <label class="form-label mt-2" th:text="#{voucher.value}">Value</label>
+                    <input name="value" type="number" class="form-control" required>
+
+                    <label class="form-label mt-2" th:text="#{voucher.minOrder}">
+                        Min Order
+                    </label>
+                    <input name="minOrder" type="number" class="form-control">
+
+                    <label class="form-label mt-2" th:text="#{voucher.maxDiscount}">
+                        Max Discount
+                    </label>
+                    <input name="maxDiscount" type="number" class="form-control">
+
+                    <label class="form-label mt-2" th:text="#{voucher.startAt}">
+                        Start Date
+                    </label>
+                    <input name="startAt" type="datetime-local" class="form-control" required>
+
+                    <label class="form-label mt-2" th:text="#{voucher.endAt}">
+                        End Date
+                    </label>
+                    <input name="endAt" type="datetime-local" class="form-control" required>
+
+                    <label class="form-label mt-2" th:text="#{voucher.perUserLimit}">
+                        Limit / User
+                    </label>
+                    <input name="perUserLimit"
+                           type="number"
+                           class="form-control"
+                           value="1">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                            th:text="#{modal.cancel}">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            th:text="#{button.update}">
+                        Update
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
 <script th:inline="javascript">
     const i18n = {
         loading: /*[[#{loading}]]*/ "Loading...",
@@ -139,14 +220,20 @@
         statusActive: /*[[#{pitch.status.active}]]*/ "Active",
         statusInactive: /*[[#{pitch.status.inactive}]]*/ "Inactive",
 
-        confirmDisable: /*[[#{voucher.confirmDisable}]]*/ "Are you sure?",
-        disableFail: /*[[#{voucher.disableFail}]]*/ "Disable failed",
-        createFail: /*[[#{voucher.createFail}]]*/ "Create failed"
+        edit: /*[[#{button.edit}]]*/ "Edit",
+
+        confirmToggle: /*[[#{voucher.confirmToggle}]]*/ "Change voucher status?",
+        confirmDisable: /*[[#{voucher.confirmDisable}]]*/ "Disable voucher?",
+        confirmEnable: /*[[#{voucher.confirmEnable}]]*/ "Enable voucher?",
+        confirmHardDelete: /*[[#{voucher.confirmHardDelete}]]*/ "Delete this voucher permanently?",
+
+        toggleFail: /*[[#{voucher.toggleFail}]]*/ "Update status failed",
+        hardDeleteFail: /*[[#{voucher.hardDeleteFail}]]*/ "Delete failed",
+        createFail: /*[[#{voucher.createFail}]]*/ "Create failed",
+        updateFail: /*[[#{voucher.updateFail}]]*/ "Update failed"
     };
 </script>
 
-
-<!-- ================= JS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/adminsystem-vouchers.js"></script>
 <script th:src="@{/js/auth.js}"></script>

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,34 +28,53 @@ public class AdminVoucherController {
 
     private final AdminVoucherService adminVoucherService;
 
-    /**
-     * AdminSystem tạo voucher (áp dụng toàn hệ thống)
-     */
     @PostMapping
     public ResponseEntity<Voucher> createVoucher(
             @RequestBody Voucher voucher,
             @AuthenticationPrincipal JwtUserDetails userDetails
     ) {
-        UUID userId = userDetails.getId();   // ✅ ĐÚNG
+        UUID userId = userDetails.getId();
         Voucher created = adminVoucherService.createVoucher(voucher, userId);
         return ResponseEntity.ok(created);
     }
-    // ====== THÊM ======
-    @DeleteMapping("/{voucherId}")
-    public ResponseEntity<Void> deleteVoucher(
+
+    @GetMapping
+    public ResponseEntity<List<Voucher>> getAllVouchers(
+            @AuthenticationPrincipal JwtUserDetails userDetails
+    ) {
+        UUID userId = userDetails.getId();
+        List<Voucher> vouchers = adminVoucherService.getAllVouchers(userId);
+        return ResponseEntity.ok(vouchers);
+    }
+
+    @PutMapping("/{voucherId}")
+    public ResponseEntity<Voucher> updateVoucher(
+            @PathVariable UUID voucherId,
+            @RequestBody Voucher voucher,
+            @AuthenticationPrincipal JwtUserDetails userDetails
+    ) {
+        UUID userId = userDetails.getId();
+        Voucher updated = adminVoucherService.updateVoucher(voucherId, voucher, userId);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/{voucherId}/toggle-active")
+    public ResponseEntity<Void> toggleVoucherActive(
             @PathVariable UUID voucherId,
             @AuthenticationPrincipal JwtUserDetails userDetails
     ) {
         UUID userId = userDetails.getId();
-        adminVoucherService.deleteVoucher(voucherId, userId);
+        adminVoucherService.toggleVoucherActive(voucherId, userId);
         return ResponseEntity.ok().build();
     }
-    @GetMapping
-public ResponseEntity<List<Voucher>> getAllVouchers(
-        @AuthenticationPrincipal JwtUserDetails userDetails
-) {
-    UUID userId = userDetails.getId();
-    List<Voucher> vouchers = adminVoucherService.getAllVouchers(userId);
-    return ResponseEntity.ok(vouchers);
-}
+
+    @DeleteMapping("/{voucherId}/hard")
+    public ResponseEntity<Void> hardDeleteVoucher(
+            @PathVariable UUID voucherId,
+            @AuthenticationPrincipal JwtUserDetails userDetails
+    ) {
+        UUID userId = userDetails.getId();
+        adminVoucherService.hardDeleteVoucher(voucherId, userId);
+        return ResponseEntity.ok().build();
+    }
 }
