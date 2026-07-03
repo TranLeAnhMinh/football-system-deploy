@@ -38,7 +38,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         alert("Unauthorized role");
                 }
             } else {
-                alert("Invalid email or password");
+                let errorMessage = "Invalid email or password";
+                try {
+                    const errorBody = await res.json();
+                    if (errorBody && errorBody.message) {
+                        errorMessage = errorBody.message;
+                    }
+                } catch (ignore) {
+                    // ignore parse errors and keep generic message
+                }
+                alert(errorMessage);
             }
         } catch (err) {
             console.error(err);

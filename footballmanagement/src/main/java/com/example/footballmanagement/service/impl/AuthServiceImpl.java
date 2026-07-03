@@ -12,6 +12,9 @@ import com.example.footballmanagement.dto.request.RefreshRequest;
 import com.example.footballmanagement.dto.response.JwtResponse;
 import com.example.footballmanagement.entity.User;
 import com.example.footballmanagement.entity.UserSession;
+import com.example.footballmanagement.entity.enums.UserStatus;
+import com.example.footballmanagement.exception.ApiException;
+import com.example.footballmanagement.exception.ErrorCode;
 import com.example.footballmanagement.repository.UserRepository;
 import com.example.footballmanagement.repository.UserSessionRepository;
 import com.example.footballmanagement.service.AuthService;
@@ -37,6 +40,10 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Invalid email or password");
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.USER_INACTIVE);
         }
 
         // tạo phiên

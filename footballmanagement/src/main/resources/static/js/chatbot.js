@@ -9,8 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!icon || !chatWindow || !closeBtn || !input || !sendBtn || !messages) return;
 
-  // const RASA_URL = "http://localhost:5005/webhooks/rest/webhook";
-  const RASA_URL = "/rasa/webhooks/rest/webhook";
+  const RASA_URL = "http://localhost:5005/webhooks/rest/webhook";
+  // const RASA_URL = "/rasa/webhooks/rest/webhook";
   const senderId = "web_user_" + Date.now();
 
   function getCurrentLanguage() {

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Any
 
-from actions.db import get_connection
+import requests
+
 from actions.parsers.branch_parser import normalize_branch_name
 
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://spring-app:8080")
 BLOCKING_BOOKING_STATUSES = (
     "PENDING",
     "APPROVED",
@@ -165,7 +168,7 @@ def _missing_fields_error_key(missing_fields: list[str]) -> str:
 
 
 def build_datetime_with_timezone(booking_date: str, time_str: str) -> str:
-    return f"{booking_date} {time_str}:00{TIMEZONE_SUFFIX}"
+    return f"{booking_date}T{time_str}:00{TIMEZONE_SUFFIX}:00"
 
 
 def get_available_pitches(
@@ -193,60 +196,36 @@ def get_available_pitches(
     start_at = build_datetime_with_timezone(booking_date, start_time)
     end_at = build_datetime_with_timezone(booking_date, end_time)
 
-    query = """
-    SELECT
-        p.id,
-        p.name,
-        p.location,
-        b.id AS branch_id,
-        b.name AS branch_name
-    FROM pitches p
-    JOIN branches b
-        ON b.id = p.branch_id
-    WHERE LOWER(b.name) = LOWER(%s)
-      AND b.active = TRUE
-      AND p.active = TRUE
-      AND NOT EXISTS (
-          SELECT 1
-          FROM booking_slots bs
-          JOIN bookings bo
-              ON bo.id = bs.booking_id
-          WHERE bs.pitch_id = p.id
-            AND bs.range && tstzrange(%s::timestamptz, %s::timestamptz, '[)')
-            AND bo.status = ANY(%s)
-      )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM maintenance_windows mw
-          WHERE mw.pitch_id = p.id
-            AND mw.range && tstzrange(%s::timestamptz, %s::timestamptz, '[)')
-      )
-    ORDER BY p.name;
-    """
-
-    conn = None
-    cursor = None
-
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            query,
-            (
-                normalized_branch_name,
-                start_at,
-                end_at,
-                list(BLOCKING_BOOKING_STATUSES),
-                start_at,
-                end_at,
-            ),
+        response = requests.get(
+            f"{BACKEND_BASE_URL}/api/chatbot/branches",
+            timeout=5,
         )
-        rows = cursor.fetchall()
+        response.raise_for_status()
+        branches = response.json()
+        branch = next(
+            (item for item in branches if item["name"].lower() == normalized_branch_name.lower()),
+            None,
+        )
+        if not branch:
+            return {
+                "ok": True,
+                "error_key": None,
+                "data": [],
+            }
+
+        response = requests.get(
+            f"{BACKEND_BASE_URL}/api/chatbot/pitches",
+            params={"branchId": branch["id"]},
+            timeout=5,
+        )
+        response.raise_for_status()
+        pitches = response.json()
 
         return {
             "ok": True,
             "error_key": None,
-            "data": rows,
+            "data": [(pitch["id"], pitch["name"], pitch["location"]) for pitch in pitches],
         }
     except Exception:
         return {
@@ -254,11 +233,6 @@ def get_available_pitches(
             "error_key": "database_error",
             "data": [],
         }
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
 
 
 def is_pitch_available(
@@ -278,64 +252,24 @@ def is_pitch_available(
     start_at = build_datetime_with_timezone(booking_date, start_time)
     end_at = build_datetime_with_timezone(booking_date, end_time)
 
-    query = """
-    SELECT
-        p.id,
-        p.name,
-        p.location
-    FROM pitches p
-    WHERE p.id = %s
-      AND p.active = TRUE
-      AND NOT EXISTS (
-          SELECT 1
-          FROM booking_slots bs
-          JOIN bookings bo
-              ON bo.id = bs.booking_id
-          WHERE bs.pitch_id = p.id
-            AND bs.range && tstzrange(%s::timestamptz, %s::timestamptz, '[)')
-            AND bo.status = ANY(%s)
-      )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM maintenance_windows mw
-          WHERE mw.pitch_id = p.id
-            AND mw.range && tstzrange(%s::timestamptz, %s::timestamptz, '[)')
-      )
-    LIMIT 1;
-    """
-
-    conn = None
-    cursor = None
-
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            query,
-            (
-                pitch_id,
-                start_at,
-                end_at,
-                list(BLOCKING_BOOKING_STATUSES),
-                start_at,
-                end_at,
-            ),
+        response = requests.post(
+            f"{BACKEND_BASE_URL}/api/chatbot/availability/check",
+            json={
+                "pitchId": pitch_id,
+                "startAt": start_at,
+                "endAt": end_at,
+            },
+            timeout=5,
         )
-        row = cursor.fetchone()
-
-        if row:
-            return {
-                "ok": True,
-                "error_key": None,
-                "available": True,
-                "data": row,
-            }
+        response.raise_for_status()
+        payload = response.json()
 
         return {
             "ok": True,
             "error_key": None,
-            "available": False,
-            "data": None,
+            "available": payload.get("available", False),
+            "data": payload,
         }
     except Exception:
         return {
@@ -344,11 +278,6 @@ def is_pitch_available(
             "available": False,
             "data": None,
         }
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
 
 def get_nearest_available_slots_for_pitch(
     pitch_id: str,

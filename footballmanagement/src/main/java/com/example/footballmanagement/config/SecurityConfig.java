@@ -86,6 +86,7 @@ public class SecurityConfig {
 
                 .requestMatchers(HttpMethod.GET, "/api/pitches/*/reviews/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/pitches/*/reviews/**").hasRole("USER")
+                .requestMatchers("/api/chatbot/**").permitAll()
                 /* ========= PUBLIC USER PAGES ========= */
                 .requestMatchers("/user/**", "/user/**?lang=**").permitAll()
 
