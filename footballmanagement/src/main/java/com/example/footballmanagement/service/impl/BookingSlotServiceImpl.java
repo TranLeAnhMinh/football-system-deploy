@@ -73,8 +73,8 @@ public List<BookingSlot> createSlots(List<BookingSlotRequest> requests, Booking 
                 }
 
                 if (existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
-    throw new ApiException(ErrorCode.BOOKING_SLOT_UNAVAILABLE);
-}
+                     throw new ApiException(ErrorCode.BOOKING_SLOT_UNAVAILABLE);
+                }
 
                 if (maintenanceWindowService.existsOverlap(pitchId, req.getStartAt(), req.getEndAt())) {
                     throw new IllegalArgumentException("Pitch is under maintenance in this period");
