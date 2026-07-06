@@ -17,6 +17,7 @@ public interface UserService {
     UserUpdateResponse updateUser (UUID id, UserUpdateRequest request);
     UserUpdateResponse getMyInfo(UUID id);
     void toggleUserStatus(UUID targetUserId, UUID adminSystemId);
+    void hardDeleteAdminBranch(UUID targetUserId, UUID adminSystemId);
     // ================== ADDED FOR ADMIN SYSTEM SEARCH ==================
     Page<User> searchUsers(
         UserRole role,

@@ -13,15 +13,12 @@
 <body>
 <div class="home-container">
 
-    <!-- Sidebar -->
     <div th:replace="layouts/adminsystemsidebar :: adminSystemSidebar"></div>
 
-    <!-- Main Content -->
     <div class="main-content">
 
         <h2 th:text="#{admin.users.title}">User Management</h2>
 
-        <!-- FILTER -->
         <div class="user-filter-box">
             <div class="filter-row">
                 <input id="filterName" class="filter-input"
@@ -46,9 +43,12 @@
             </div>
         </div>
 
-        <!-- USER LIST -->
         <div class="user-section">
             <h3 th:text="#{admin.users.listTitle}">User List</h3>
+
+            <div class="info-box" th:text="#{admin.users.deleteNotice}">
+                Only ADMIN_BRANCH accounts can be deleted permanently. Other user types are protected.
+            </div>
 
             <table class="user-table">
                 <thead>
@@ -74,7 +74,6 @@
     </div>
 </div>
 
-<!-- MODAL APPROVE -->
 <div class="modal-overlay" id="approveModal">
     <div class="modal-box">
         <h4 th:text="#{admin.users.approveTitle}">Approve Admin Branch</h4>
@@ -96,7 +95,6 @@
     </div>
 </div>
 
-<!-- I18N inject for JS -->
 <script th:inline="javascript">
     const i18n = {
         loading: '[[#{loading}]]',
@@ -104,6 +102,9 @@
         empty: '[[#{empty}]]',
         activate: '[[#{activate}]]',
         deactivate: '[[#{deactivate}]]',
+        cannotDeactivateAdminSystem: '[[#{admin.users.cannotDeactivateAdminSystem}]]',
+        deleteAdminBranch: '[[#{admin.users.deleteAdminBranch}]]',
+        confirmDeleteAdminBranch: '[[#{admin.users.confirmDeleteAdminBranch}]]',
         approve: '[[#{approve}]]',
         chooseBranchLoading: '[[#{admin.users.chooseBranch.loading}]]',
         chooseBranchEmpty: '[[#{admin.users.chooseBranch.empty}]]',

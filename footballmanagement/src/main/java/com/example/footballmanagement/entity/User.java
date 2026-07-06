@@ -11,6 +11,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
@@ -22,7 +23,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.persistence.FetchType;
 
 @Entity
 @Table(
@@ -83,7 +83,7 @@ public class User {
     private List<Notification> notifications;
 
     // 1 user có thể là admin của 1 branch
-    @OneToOne(mappedBy = "admin", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "admin", fetch = FetchType.LAZY)
     private Branch branchAdmin;
 
     // 1 user có nhiều bookings

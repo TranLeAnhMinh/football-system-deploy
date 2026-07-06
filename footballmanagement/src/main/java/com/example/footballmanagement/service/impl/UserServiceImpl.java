@@ -18,6 +18,7 @@ import com.example.footballmanagement.entity.enums.UserStatus;
 import com.example.footballmanagement.exception.ApiException;
 import com.example.footballmanagement.exception.ErrorCode;
 import com.example.footballmanagement.exception.custom.RegisterException;
+import com.example.footballmanagement.repository.BranchRepository;
 import com.example.footballmanagement.repository.UserRepository;
 import com.example.footballmanagement.service.NotificationService;
 import com.example.footballmanagement.service.UserService;
@@ -34,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
+    private final BranchRepository branchRepository;
 
 @Override
 public RegisterResponse register(RegisterRequest request){
@@ -171,6 +173,35 @@ public void toggleUserStatus(UUID targetUserId, UUID adminSystemId) {
         throw new ApiException(ErrorCode.UPDATE_FAILED);
     }
 }
+@Override
+@Transactional
+public void hardDeleteAdminBranch(UUID targetUserId, UUID adminSystemId) {
+    User admin = userRepository.findById(adminSystemId)
+            .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+    if (admin.getRole() != UserRole.ADMIN_SYSTEM) {
+        throw new ApiException(ErrorCode.ROLE_FORBIDDEN);
+    }
+
+    if (adminSystemId.equals(targetUserId)) {
+        throw new ApiException(ErrorCode.ACTION_NOT_ALLOWED);
+    }
+
+    User target = userRepository.findById(targetUserId)
+            .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+    if (target.getRole() != UserRole.ADMIN_BRANCH) {
+        throw new ApiException(ErrorCode.ACTION_NOT_ALLOWED);
+    }
+
+    branchRepository.findByAdmin_Id(targetUserId).ifPresent(branch -> {
+        branch.setAdmin(null);
+        branchRepository.save(branch);
+    });
+
+    userRepository.delete(target);
+}
+
 @Override
 @Transactional(readOnly = true)
 public Page<User> searchUsers(

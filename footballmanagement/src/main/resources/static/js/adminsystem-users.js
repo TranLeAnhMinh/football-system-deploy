@@ -109,10 +109,19 @@ function renderActionButtons(user) {
   // Toggle ACTIVE/INACTIVE
   btns += `
     <button class="btn-small ${user.status === "ACTIVE" ? "btn-inactive" : "btn-active"}"
-      onclick="toggleUserStatus('${user.id}')">
+      onclick="toggleUserStatus('${user.id}', '${user.role}', '${user.status}')">
       ${user.status === "ACTIVE" ? i18n.deactivate : i18n.activate}
     </button>
   `;
+
+  if (user.role === "ADMIN_BRANCH") {
+    btns += `
+      <button class="btn-small btn-delete"
+        onclick="deleteAdminBranch('${user.id}')">
+        ${i18n.deleteAdminBranch}
+      </button>
+    `;
+  }
 
   // Approve pending admin branch
   if (user.role === "PENDING_ADMIN_BRANCH") {
@@ -196,7 +205,12 @@ function debounce(fn, delay) {
 /* ============================================================
    6. TOGGLE STATUS
 ============================================================ */
-async function toggleUserStatus(userId) {
+async function toggleUserStatus(userId, role, status) {
+  if (role === "ADMIN_SYSTEM" && status === "ACTIVE") {
+    alert(i18n.cannotDeactivateAdminSystem);
+    return;
+  }
+
   const token = localStorage.getItem("accessToken");
 
   const res = await fetch(`/api/adminsystem/users/${userId}/toggle-status`, {
@@ -209,6 +223,24 @@ async function toggleUserStatus(userId) {
   loadUsers();
 }
 
+async function deleteAdminBranch(userId) {
+  const token = localStorage.getItem("accessToken");
+
+  if (!confirm(i18n.confirmDeleteAdminBranch)) return;
+
+  const res = await fetch(`/api/adminsystem/users/${userId}/admin-branch`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    alert(errData?.message || i18n.error);
+    return;
+  }
+
+  loadUsers();
+}
 
 /* ============================================================
    7. APPROVE (CUSTOM MODAL)

@@ -222,10 +222,27 @@ def get_available_pitches(
         response.raise_for_status()
         pitches = response.json()
 
+        available_pitches = []
+        for pitch in pitches:
+            availability_response = requests.post(
+                f"{BACKEND_BASE_URL}/api/chatbot/availability/check",
+                json={
+                    "pitchId": pitch["id"],
+                    "startAt": start_at,
+                    "endAt": end_at,
+                },
+                timeout=5,
+            )
+            availability_response.raise_for_status()
+            availability_payload = availability_response.json()
+
+            if availability_payload.get("available", False):
+                available_pitches.append((pitch["id"], pitch["name"], pitch["location"]))
+
         return {
             "ok": True,
             "error_key": None,
-            "data": [(pitch["id"], pitch["name"], pitch["location"]) for pitch in pitches],
+            "data": available_pitches,
         }
     except Exception:
         return {
