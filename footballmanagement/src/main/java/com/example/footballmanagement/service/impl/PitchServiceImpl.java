@@ -55,30 +55,42 @@ public class PitchServiceImpl implements PitchService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public PitchTypeBranchesResponse getBranchesAndPitchesByType(PitchTypeRequest request) {
-        Short pitchTypeId = request.getPitchTypeId();
+public PitchTypeBranchesResponse getBranchesAndPitchesByType(PitchTypeRequest request) {
+    Short pitchTypeId = request.getPitchTypeId();
 
-        PitchType pitchType = pitchTypeRepository.findById(pitchTypeId)
-                .orElseThrow(() -> new RuntimeException("PitchType not found: " + pitchTypeId));
+    PitchType pitchType = pitchTypeRepository.findById(pitchTypeId)
+            .orElseThrow(() -> new RuntimeException("PitchType not found: " + pitchTypeId));
 
-        List<Pitch> pitches = pitchRepository.findByPitchType_IdAndActiveTrue(pitchTypeId);
+    List<Pitch> pitches = pitchRepository.findByPitchType_IdAndActiveTrue(pitchTypeId);
 
-        var branchPitchMap = pitches.stream()
-                .collect(Collectors.groupingBy(p -> p.getBranch().getId()));
+    if (!pitches.isEmpty()) {
+        List<UUID> pitchIds = pitches.stream()
+                .map(Pitch::getId)
+                .toList();
 
-        List<PitchTypeBranchesResponse.BranchSummaryDTO> branchDTOs = branchPitchMap.entrySet().stream()
-                .map(entry -> {
-                    List<Pitch> branchPitches = entry.getValue();
-                    return ConverterUtil.toBranchSummaryDTO(branchPitches.get(0).getBranch(), branchPitches);
-                })
-                .collect(Collectors.toList());
+        Set<UUID> fullyConfiguredPitchIds = basePriceService.getFullyConfiguredPitchIds(pitchIds);
 
-        return PitchTypeBranchesResponse.builder()
-                .pitchTypeId(pitchType.getId())
-                .pitchTypeName(pitchType.getName())
-                .branches(branchDTOs)
-                .build();
+        pitches = pitches.stream()
+                .filter(p -> fullyConfiguredPitchIds.contains(p.getId()))
+                .toList();
     }
+
+    var branchPitchMap = pitches.stream()
+            .collect(Collectors.groupingBy(p -> p.getBranch().getId()));
+
+    List<PitchTypeBranchesResponse.BranchSummaryDTO> branchDTOs = branchPitchMap.entrySet().stream()
+            .map(entry -> {
+                List<Pitch> branchPitches = entry.getValue();
+                return ConverterUtil.toBranchSummaryDTO(branchPitches.get(0).getBranch(), branchPitches);
+            })
+            .collect(Collectors.toList());
+
+    return PitchTypeBranchesResponse.builder()
+            .pitchTypeId(pitchType.getId())
+            .pitchTypeName(pitchType.getName())
+            .branches(branchDTOs)
+            .build();
+}
 
     @Override
     public PitchDetailResponse getPitchDetail(UUID pitchId) {

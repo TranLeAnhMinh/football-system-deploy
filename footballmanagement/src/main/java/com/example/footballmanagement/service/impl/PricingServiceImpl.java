@@ -48,10 +48,9 @@ public class PricingServiceImpl implements PricingService {
         // 1. Tính giá gốc
         BigDecimal basePrice = calculateBasePrice(pitchId, slots);
 
-        // 2. Áp rule ưu tiên cao nhất
+       
         BigDecimal adjustedPrice = applyPriceRules(pitchId, slots, basePrice);
-
-        // 3. Áp voucher (nếu có)
+         // 2. Áp voucher (nếu có)
         BigDecimal discount = BigDecimal.ZERO;
         if (voucherCode != null && !voucherCode.isBlank()) {
             Voucher voucher = voucherService.findActiveByCode(voucherCode)

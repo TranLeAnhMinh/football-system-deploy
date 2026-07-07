@@ -51,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // 🔒 Lock sân trong transaction để tránh race condition với luồng tạo lịch bảo trì
+        // Lock sân trong transaction để tránh race condition với luồng tạo lịch bảo trì và booking
         Pitch pitch = pitchRepo.findByIdForUpdate(request.getPitchId())
                 .orElseThrow(() -> new IllegalArgumentException("Pitch not found"));
 
