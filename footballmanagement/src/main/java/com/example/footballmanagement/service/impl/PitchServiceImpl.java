@@ -1,12 +1,17 @@
 package com.example.footballmanagement.service.impl;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,6 +56,8 @@ public class PitchServiceImpl implements PitchService {
     private final BranchRepository branchRepository;
     private final ImageStorageService imageStorageService;
     private final PitchImageRepository pitchImageRepository;
+    @Qualifier("imageUploadExecutor")
+    private final Executor imageUploadExecutor;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -207,26 +214,25 @@ public List<PitchTypeDetailResponse> getPitchesByAdminBranch(UUID adminId) {
                 .build();
 
         if (files != null && !files.isEmpty()) {
-            List<PitchImage> imageEntities = new ArrayList<>();
+            List<UploadedPitchImage> uploadedImages = uploadImagesInParallel(files);
 
-            for (MultipartFile file : files) {
-                if (file == null || file.isEmpty()) {
-                    continue;
+            if (!uploadedImages.isEmpty()) {
+                List<PitchImage> imageEntities = new ArrayList<>();
+
+                for (int i = 0; i < uploadedImages.size(); i++) {
+                    UploadedPitchImage uploadedImage = uploadedImages.get(i);
+
+                    PitchImage.PitchImageBuilder imageBuilder = PitchImage.builder()
+                        .pitch(pitch)
+                        .url(uploadedImage.uploadResult().getUrl())
+                        .publicId(uploadedImage.uploadResult().getPublicId())
+                        .isCover(i == 0);
+
+                    imageEntities.add(imageBuilder.build());
                 }
 
-                ImageUploadResult uploadResult = imageStorageService.upload(file, "pitchimages");
-                boolean isCover = imageEntities.isEmpty();
-
-                PitchImage.PitchImageBuilder imageBuilder = PitchImage.builder()
-                        .pitch(pitch)
-                        .url(uploadResult.getUrl())
-                        .publicId(uploadResult.getPublicId())
-                        .isCover(isCover);
-
-                imageEntities.add(imageBuilder.build());
+                pitch.setImages(imageEntities);
             }
-
-            pitch.setImages(imageEntities);
         }
 
         Pitch saved = pitchRepository.save(pitch);
@@ -364,27 +370,20 @@ public List<PitchTypeDetailResponse> getPitchesByAdminBranch(UUID adminId) {
         List<PitchImage> existingImages = pitchImageRepository.findByPitch_Id(pitchId);
         boolean hasExistingImages = !existingImages.isEmpty();
 
+        List<UploadedPitchImage> uploadedImages = uploadImagesInParallel(files);
+
+        if (uploadedImages.isEmpty()) {
+            throw new IllegalArgumentException("No valid image files were uploaded");
+        }
+
         List<PitchImage> savedImages = new ArrayList<>();
-        boolean coverAssignedInThisBatch = false;
-
-        for (MultipartFile file : files) {
-            if (file == null || file.isEmpty()) {
-                continue;
-            }
-
-            ImageUploadResult uploadResult = imageStorageService.upload(file, "pitchimages");
-
-            boolean isCover = false;
-            if (!hasExistingImages && !coverAssignedInThisBatch) {
-                isCover = true;
-                coverAssignedInThisBatch = true;
-            }
-
+        for (int i = 0; i < uploadedImages.size(); i++) {
+            UploadedPitchImage uploadedImage = uploadedImages.get(i);
             PitchImage pitchImage = PitchImage.builder()
                     .pitch(pitch)
-                    .url(uploadResult.getUrl())
-                    .publicId(uploadResult.getPublicId())
-                    .isCover(isCover)
+                    .url(uploadedImage.uploadResult().getUrl())
+                    .publicId(uploadedImage.uploadResult().getPublicId())
+                    .isCover(!hasExistingImages && i == 0)
                     .build();
 
             savedImages.add(pitchImageRepository.save(pitchImage));
@@ -402,5 +401,59 @@ public List<PitchTypeDetailResponse> getPitchesByAdminBranch(UUID adminId) {
                         .isCover(img.isCover())
                         .build())
                 .toList();
+    }
+
+    private List<UploadedPitchImage> uploadImagesInParallel(List<MultipartFile> files) {
+        List<IndexedMultipartFile> validFiles = new ArrayList<>();
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            if (file != null && !file.isEmpty()) {
+                validFiles.add(new IndexedMultipartFile(i, file));
+            }
+        }
+
+        if (validFiles.isEmpty()) {
+            return List.of();
+        }
+
+        List<CompletableFuture<UploadedPitchImage>> futures = validFiles.stream()
+                .map(indexedFile -> CompletableFuture.supplyAsync(
+                        () -> new UploadedPitchImage(
+                                indexedFile.index(),
+                                imageStorageService.upload(indexedFile.file(), "pitchimages")
+                        ),
+                        imageUploadExecutor
+                ))
+                .toList();
+
+        try {
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        } catch (CompletionException e) {
+            cleanupUploadedImages(futures);
+            throw new RuntimeException("Failed to upload one or more pitch images", e.getCause() == null ? e : e.getCause());
+        }
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .sorted(Comparator.comparingInt(UploadedPitchImage::index))
+                .toList();
+    }
+
+    private void cleanupUploadedImages(List<CompletableFuture<UploadedPitchImage>> futures) {
+        futures.stream()
+                .filter(CompletableFuture::isDone)
+                .filter(future -> !future.isCompletedExceptionally())
+                .map(CompletableFuture::join)
+                .map(UploadedPitchImage::uploadResult)
+                .map(ImageUploadResult::getPublicId)
+                .filter(publicId -> publicId != null && !publicId.isBlank())
+                .forEach(imageStorageService::delete);
+    }
+
+    private record IndexedMultipartFile(int index, MultipartFile file) {
+    }
+
+    private record UploadedPitchImage(int index, ImageUploadResult uploadResult) {
     }
 }

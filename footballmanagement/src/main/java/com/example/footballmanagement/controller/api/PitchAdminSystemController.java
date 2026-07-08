@@ -46,6 +46,14 @@ public class PitchAdminSystemController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PitchCreateResponse> createPitch(
+            @RequestBody PitchCreateRequest request) {
+
+        PitchCreateResponse response = pitchService.createPitchWithFiles(request, null);
+        return ResponseEntity.ok(response);
+    }
+
     // 🔹 GET /api/adminsystem/pitches/{id}
     @GetMapping("/{id}")
     public ResponseEntity<PitchDetaiAdminsystemlResponse> getPitchDetail(

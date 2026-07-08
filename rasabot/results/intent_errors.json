@@ -1,0 +1,10 @@
+[
+  {
+    "text": "chào hệ thống",
+    "intent": "greet",
+    "intent_prediction": {
+      "name": "ask_branch_count",
+      "confidence": 0.36343473196029663
+    }
+  }
+]

@@ -1,6 +1,8 @@
 package com.example.footballmanagement.service.impl;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -48,23 +50,34 @@ public class BranchServiceImpl implements BranchService {
 
     @Override
     public List<BranchResponse> getAllBranchesWithPitches() {
-        return branchRepository.findAllWithPitches()
+        List<Branch> branches = branchRepository.findAllWithPitches();
+
+        List<UUID> pitchIds = branches.stream()
+                .flatMap(branch -> branch.getPitches() == null
+                        ? java.util.stream.Stream.<Pitch>empty()
+                        : branch.getPitches().stream())
+                .map(Pitch::getId)
+                .toList();
+
+        Set<UUID> fullyConfiguredPitchIds = basePriceService.getFullyConfiguredPitchIds(pitchIds);
+
+        return branches
                 .stream()
-                .map(this::mapToResponse)
+                .map(branch -> mapToResponse(branch, fullyConfiguredPitchIds))
                 .toList();
     }
 
-    private BranchResponse mapToResponse(Branch b) {
+    private BranchResponse mapToResponse(Branch b, Set<UUID> fullyConfiguredPitchIds) {
         return BranchResponse.builder()
                 .id(b.getId())
                 .name(b.getName())
                 .location(b.getLocation())
                 .description(b.getDescription())
-                .pitches(mapPitchList(b.getPitches()))
+                .pitches(mapPitchList(b.getPitches(), fullyConfiguredPitchIds))
                 .build();
     }
 
-    private List<PitchSummary> mapPitchList(List<Pitch> pitches) {
+    private List<PitchSummary> mapPitchList(List<Pitch> pitches, Set<UUID> fullyConfiguredPitchIds) {
         if (pitches == null) return List.of();
 
         return pitches.stream()
@@ -76,9 +89,7 @@ public class BranchServiceImpl implements BranchService {
                         .active(p.isActive())
                         .pitchTypeId(p.getPitchType().getId())
                         .pitchTypeName(p.getPitchType().getName())
-                        .priceConfigComplete(
-                                basePriceService.isPitchPriceConfigComplete(p.getId())
-                        )
+                        .priceConfigComplete(fullyConfiguredPitchIds.contains(p.getId()))
                         .build())
                 .toList();
     }

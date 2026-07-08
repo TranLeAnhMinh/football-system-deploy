@@ -1,0 +1,76 @@
+version: "3.1"
+
+stories:
+- story: test greet
+  steps:
+    - user: |
+        chào hệ thống
+      intent: greet
+    - action: action_greet
+
+- story: test goodbye
+  steps:
+    - user: |
+        cảm ơn, tạm biệt
+      intent: goodbye
+    - action: action_goodbye
+
+- story: test ask branch count
+  steps:
+    - user: |
+        hiện tại có tổng cộng bao nhiêu chi nhánh
+      intent: ask_branch_count
+    - action: action_count_branches
+
+- story: test ask branch list
+  steps:
+    - user: |
+        cho tôi xem toàn bộ chi nhánh
+      intent: ask_branch_list
+    - action: action_list_branches
+
+- story: test ask pitches by branch
+  steps:
+    - user: |
+        bên quận 1 đang có những sân bóng nào
+      intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+
+- story: test ask pitches by another branch follow up
+  steps:
+    - user: |
+        bên quận 1 đang có những sân bóng nào
+      intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+    - user: |
+        vậy quận 7 thì có sân nào
+      intent: ask_pitches_by_branch
+    - action: action_list_pitches_by_branch
+
+- story: test ask available pitches by branch
+  steps:
+    - user: |
+        quận 1 ngày mai 7h đến 8h30 còn sân trống nào không
+      intent: ask_available_pitches
+    - action: action_check_available_pitches_by_branch
+
+- story: test ask pitch availability
+  steps:
+    - user: |
+        sân F88 ngày mai 7h đến 8h30 có trống không
+      intent: ask_pitch_availability
+    - action: action_check_pitch_availability
+
+- story: test booking guide
+  steps:
+    - user: |
+        tôi cần hướng dẫn đặt sân bóng
+      intent: ask_booking_guide
+    - action: action_booking_guide
+
+- story: test out of scope
+  steps:
+    - user: |
+        hôm nay nên ăn gì
+      intent: out_of_scope
+    - action: action_fallback

@@ -32,7 +32,7 @@ public class BookingCleanupService {
         if (!expired.isEmpty()) {
             expired.forEach(b -> {
                 b.setStatus(BookingStatus.CANCELLED);
-                slotService.deleteByBookingId(b.getId()); // 👈 xoá slot đi
+                slotService.deleteByBookingId(b.getId()); //    xoá slot đi
             });
             bookingRepo.saveAll(expired);
             System.out.println("Cancelled " + expired.size() + " expired bookings");

@@ -176,11 +176,28 @@ if (editBranchForm) {
     });
 }
 
+let isCreatingPitch = false;
+
 document.getElementById("createPitchForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    if (isCreatingPitch) {
+        return;
+    }
+
+    isCreatingPitch = true;
     const form = e.target;
-    const fd = new FormData();
+    const submitButton = form.querySelector('button[type="submit"]');
+    const closeButtons = form.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+    const originalSubmitText = submitButton ? submitButton.innerText : "";
+
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerText = i18n.creatingPitch;
+    }
+    closeButtons.forEach((button) => {
+        button.disabled = true;
+    });
 
     const pitchJson = {
         branchId: form.branchId.value,
@@ -189,30 +206,78 @@ document.getElementById("createPitchForm").addEventListener("submit", async (e) 
         description: form.description.value,
         pitchTypeId: form.pitchTypeId.value
     };
+    const files = Array.from(form.file.files);
 
-    fd.append("pitch", JSON.stringify(pitchJson));
+    try {
+        const res = await fetch("/api/adminsystem/pitches", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+            },
+            body: JSON.stringify(pitchJson)
+        });
 
-    const files = form.file.files;
-    for (let f of files) {
-        fd.append("file", f);
-    }
+        if (!res.ok) {
+            alert(i18n.error);
+            return;
+        }
 
-    const res = await fetch("/api/adminsystem/pitches/upload-and-create", {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
-        },
-        body: fd
-    });
+        const createdPitch = await res.json();
 
-    if (!res.ok) {
+        form.reset();
+        document.getElementById("fileInfo").innerText = i18n.noFile;
+        document.getElementById("fileText").innerText = i18n.chooseFile;
+
+        bootstrap.Modal.getInstance(document.getElementById("createPitchModal")).hide();
+        loadAdminBranches();
+        uploadPitchImagesInBackground(createdPitch.id, files);
+    } catch (err) {
+        console.error(err);
         alert(i18n.error);
+    } finally {
+        isCreatingPitch = false;
+
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerText = originalSubmitText;
+        }
+        closeButtons.forEach((button) => {
+            button.disabled = false;
+        });
+    }
+});
+
+async function uploadPitchImagesInBackground(pitchId, files) {
+    if (!pitchId || !files || files.length === 0) {
         return;
     }
 
-    loadAdminBranches();
-    bootstrap.Modal.getInstance(document.getElementById("createPitchModal")).hide();
-});
+    const fd = new FormData();
+    files.forEach((file) => {
+        fd.append("files", file);
+    });
+
+    try {
+        const res = await fetch(`/api/adminsystem/pitches/${pitchId}/images`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+            },
+            body: fd
+        });
+
+        if (!res.ok) {
+            alert(i18n.pitchImageUploadFail || i18n.error);
+            return;
+        }
+
+        await loadAdminBranches();
+    } catch (err) {
+        console.error(err);
+        alert(i18n.pitchImageUploadFail || i18n.error);
+    }
+}
 
 /* SỬA: dùng i18n mới cho image */
 document.getElementById("pitchFiles").addEventListener("change", function () {

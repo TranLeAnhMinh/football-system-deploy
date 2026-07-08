@@ -1,0 +1,50 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - chào hệ thống
+    - hello, tôi cần hỗ trợ
+
+- intent: goodbye
+  examples: |
+    - cảm ơn, tạm biệt
+    - bye bot nhé
+
+- intent: ask_branch_count
+  examples: |
+    - hiện tại có tổng cộng bao nhiêu chi nhánh
+    - cho tôi biết số cơ sở đang hoạt động
+
+- intent: ask_branch_list
+  examples: |
+    - cho tôi xem toàn bộ chi nhánh
+    - hệ thống đang có các địa điểm nào
+
+- intent: ask_pitches_by_branch
+  examples: |
+    - bên quận 1 đang có những sân bóng nào
+    - liệt kê sân ở quận thanh xuân giúp tôi
+    - show pitches at district 10
+
+- intent: ask_available_pitches
+  examples: |
+    - quận 1 ngày mai 7h đến 8h30 còn sân trống nào không
+    - tối nay từ 19h đến 20h30 ở quận 7 còn sân nào
+    - district 3 tomorrow from 18:00 to 19:30 has any free pitches
+
+- intent: ask_pitch_availability
+  examples: |
+    - sân F88 ngày mai 7h đến 8h30 có trống không
+    - kiểm tra sân Mỹ Đình tối nay 19h đến 20h30 giúp tôi
+    - is pitch A1 free tomorrow from 18:00 to 19:30
+
+- intent: ask_booking_guide
+  examples: |
+    - tôi cần hướng dẫn đặt sân bóng
+    - quy trình booking sân như thế nào
+
+- intent: out_of_scope
+  examples: |
+    - hôm nay nên ăn gì
+    - giúp tôi giải bài toán này
