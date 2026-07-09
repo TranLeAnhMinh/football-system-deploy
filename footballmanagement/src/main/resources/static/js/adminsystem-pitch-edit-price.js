@@ -36,7 +36,6 @@ async function loadPitchSummary() {
     try {
         const res = await fetch(`/api/adminsystem/pitches/${pitchId}`, {
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             }
         });
 
@@ -53,15 +52,17 @@ async function loadPitchSummary() {
             pitch.images?.[0]?.url ||
             "/images/no-image.png";
 
+        const coverUrl = sanitizeResourceUrl(cover, "/images/no-image.png");
+
         container.innerHTML = `
             <div class="pitch-summary-card">
-                <img src="${cover}" alt="${pitch.name}" class="pitch-summary-img">
+                <img src="${escapeHtmlAttr(coverUrl)}" alt="${escapeHtmlAttr(pitch.name)}" class="pitch-summary-img">
 
                 <div class="pitch-summary-info">
-                    <h3>${pitch.name}</h3>
-                    <p><strong>${i18n.branch}</strong> ${pitch.branchName ?? ""}</p>
-                    <p><strong>${i18n.location}</strong> ${pitch.location ?? ""}</p>
-                    <p><strong>${i18n.type}</strong> ${pitch.pitchTypeName ?? ""}</p>
+                    <h3>${escapeHtml(pitch.name)}</h3>
+                    <p><strong>${escapeHtml(i18n.branch)}</strong> ${escapeHtml(pitch.branchName ?? "")}</p>
+                    <p><strong>${escapeHtml(i18n.location)}</strong> ${escapeHtml(pitch.location ?? "")}</p>
+                    <p><strong>${escapeHtml(i18n.type)}</strong> ${escapeHtml(pitch.pitchTypeName ?? "")}</p>
                     <p>
                         <strong>${i18n.status}</strong>
                         <span style="color:${pitch.active ? "#10b981" : "#6b7280"}; font-weight:600;">
@@ -90,7 +91,6 @@ async function loadWeeklyGrid() {
     try {
         const res = await fetch(`/api/adminsystem/base-prices/pitches/${pitchId}/weekly-grid`, {
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             }
         });
 
@@ -173,7 +173,7 @@ ${i18n.priceTooltip}: ${cell.configured ? formatPrice(cell.price) + " VND" : i18
                                 data-time-end="${row.timeEnd}"
                                 data-price="${cell.price ?? ""}"
                                 data-configured="${cell.configured}"
-                                title="${tooltip.trim()}"
+                                title="${escapeHtmlAttr(tooltip.trim())}"
                             >
                                 ${displayPrice}
                             </td>
@@ -279,7 +279,6 @@ function bindEditPriceModalEvents() {
             const res = await fetch(`/api/adminsystem/base-prices/cell`, {
                 method: "PATCH",
                 headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
@@ -365,7 +364,6 @@ if (!price || price <= 0) {
             const res = await fetch(`/api/adminsystem/base-prices/apply-template`, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
@@ -484,4 +482,25 @@ async function safeReadError(res) {
     } catch {
         return null;
     }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value) {
+    return escapeHtml(value);
+}
+
+function sanitizeResourceUrl(value, fallback) {
+    const url = String(value || "").trim();
+    if (/^(https?:\/\/|\/)/i.test(url)) {
+        return url;
+    }
+    return fallback;
 }

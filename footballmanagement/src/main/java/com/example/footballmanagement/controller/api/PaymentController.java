@@ -4,13 +4,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;          // ✅ thêm
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody; // ✅ thêm
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.footballmanagement.config.JwtUserDetails;
 import com.example.footballmanagement.entity.Payment;
 import com.example.footballmanagement.service.PaymentService;
 
@@ -25,12 +27,19 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @GetMapping("/vnpay")
-    @ResponseBody // ✅ Chỉ riêng endpoint này trả JSON
+    @ResponseBody
     public ResponseEntity<String> createPaymentUrl(
             @RequestParam UUID bookingId,
+            @AuthenticationPrincipal JwtUserDetails userDetails,
             HttpServletRequest request) throws Exception {
-        String url = paymentService.createPaymentUrl(bookingId, request);
+        String url = paymentService.createPaymentUrl(bookingId, userDetails.getId(), request);
         return ResponseEntity.ok(url);
+    }
+
+    @GetMapping("/vnpay-ipn")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> handleVnPayIpn(@RequestParam Map<String, String> allParams) {
+        return ResponseEntity.ok(paymentService.handleVnPayIpn(allParams));
     }
 
     @GetMapping("/vnpay-return")
@@ -44,6 +53,6 @@ public class PaymentController {
             redirectAttributes.addFlashAttribute("errorMessage", "Thanh toán thất bại, vui lòng thử lại.");
         }
 
-        return "redirect:/user/home"; // ✅ Redirect thật sự
+        return "redirect:/user/home";
     }
 }

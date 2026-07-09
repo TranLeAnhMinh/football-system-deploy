@@ -20,13 +20,10 @@ function formatCurrency(num) {
 
 // =================== LOAD BRANCH DROPDOWN ===================
 async function loadBranchDropdown() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return;
- 
   console.log("["+ I18N.branchAll +"]"); 
   try {
     const res = await fetch(API_BRANCHES, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
 
     if (!res.ok) throw new Error("Không thể tải danh sách chi nhánh");
@@ -51,9 +48,6 @@ async function loadBranchDropdown() {
 
 // =================== DAILY ===================
 async function loadDailyRevenue() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return showAlert("Vui lòng đăng nhập lại");
-
   const dateValue = document.getElementById("rev-date")?.value;
   const branchId = document.getElementById("branch-select")?.value;
 
@@ -88,7 +82,6 @@ async function loadDailyRevenue() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
       },
       body: JSON.stringify(body),
     });
@@ -115,9 +108,6 @@ async function loadDailyRevenue() {
 
 // =================== MONTHLY ===================
 async function loadMonthlyRevenue() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return showAlert("Vui lòng đăng nhập lại");
-
   const yearValue = document.getElementById("rev-year")?.value;
   const branchId = document.getElementById("branch-select")?.value;
 
@@ -134,7 +124,6 @@ async function loadMonthlyRevenue() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
       },
       body: JSON.stringify(body),
     });
@@ -240,3 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDailyRevenue();
   loadMonthlyRevenue();
 });
+
+
+
+

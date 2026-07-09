@@ -28,7 +28,8 @@ import lombok.Setter;
     name = "payments",
     indexes = {
         @Index(name = "idx_payments_booking", columnList = "booking_id"),
-        @Index(name = "idx_payments_status", columnList = "status")
+        @Index(name = "idx_payments_status", columnList = "status"),
+        @Index(name = "idx_payments_txn_ref", columnList = "txn_ref")
     }
 )
 @Getter
@@ -51,6 +52,27 @@ public class Payment {
 
     @Column(nullable = false, length = 50)
     private String method; // VNPAY, CASH
+
+    @Column(name = "txn_ref", unique = true, length = 64)
+    private String txnRef;
+
+    @Column(name = "vnp_transaction_no", length = 64)
+    private String vnpTransactionNo;
+
+    @Column(name = "bank_code", length = 32)
+    private String bankCode;
+
+    @Column(name = "response_code", length = 10)
+    private String responseCode;
+
+    @Column(name = "transaction_status", length = 10)
+    private String transactionStatus;
+
+    @Column(name = "pay_date", length = 20)
+    private String payDate;
+
+    @Column(name = "raw_callback", columnDefinition = "TEXT")
+    private String rawCallback;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

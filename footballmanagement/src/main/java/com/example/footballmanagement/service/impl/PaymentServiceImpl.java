@@ -44,14 +44,29 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public String createPaymentUrl(UUID bookingId, HttpServletRequest request) throws Exception {
+    public String createPaymentUrl(UUID bookingId, UUID userId, HttpServletRequest request) throws Exception {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new SecurityException("You are not allowed to pay this booking");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalStateException("Only pending bookings can be paid");
+        }
 
         BigDecimal finalPrice = booking.getFinalPrice();
         if (finalPrice == null || finalPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("Final price is not available for booking " + bookingId);
         }
+
+        Payment payment = paymentRepository.save(Payment.builder()
+                .booking(booking)
+                .amount(finalPrice)
+                .method("VNPAY")
+                .txnRef(generateTxnRef())
+                .status(PaymentStatus.INITIATED)
+                .build());
 
         Map<String, String> params = new HashMap<>();
         params.put("vnp_Version", "2.1.0");
@@ -59,7 +74,7 @@ public class PaymentServiceImpl implements PaymentService {
         params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
         params.put("vnp_Amount", String.valueOf(finalPrice.multiply(BigDecimal.valueOf(100)).longValue()));
         params.put("vnp_CurrCode", "VND");
-        params.put("vnp_TxnRef", String.valueOf(System.currentTimeMillis()));
+        params.put("vnp_TxnRef", payment.getTxnRef());
         params.put("vnp_OrderInfo", "Thanh toan booking " + booking.getId());
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
@@ -67,30 +82,10 @@ public class PaymentServiceImpl implements PaymentService {
         params.put("vnp_IpAddr", request.getRemoteAddr());
         params.put("vnp_CreateDate", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
 
-        List<String> fieldNames = new ArrayList<>(params.keySet());
-        Collections.sort(fieldNames);
+        String hashData = buildHashData(params);
+        StringBuilder query = new StringBuilder(hashData);
 
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
-
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String name = fieldNames.get(i);
-            String value = params.get(name);
-
-            if (value != null && !value.isEmpty()) {
-                String encodedValue = URLEncoder.encode(value, StandardCharsets.US_ASCII);
-
-                hashData.append(name).append('=').append(encodedValue);
-                query.append(name).append('=').append(encodedValue);
-
-                if (i < fieldNames.size() - 1) {
-                    hashData.append('&');
-                    query.append('&');
-                }
-            }
-        }
-
-        String secureHash = hmacSHA512(vnPayConfig.getHashSecret(), hashData.toString());
+        String secureHash = hmacSHA512(vnPayConfig.getHashSecret(), hashData);
         query.append("&vnp_SecureHash=").append(secureHash);
 
         return vnPayConfig.getPayUrl() + "?" + query;
@@ -99,37 +94,63 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public Payment handleVnPayReturn(Map<String, String> vnpayParams) throws Exception {
-        String vnpSecureHash = vnpayParams.get("vnp_SecureHash");
+        return processVnPayCallback(vnpayParams, false);
+    }
 
-        vnpayParams.remove("vnp_SecureHash");
-        vnpayParams.remove("vnp_SecureHashType");
+    @Override
+    @Transactional
+    public Map<String, String> handleVnPayIpn(Map<String, String> vnpayParams) {
+        try {
+            processVnPayCallback(vnpayParams, true);
+            return Map.of("RspCode", "00", "Message", "Confirm Success");
+        } catch (AlreadyProcessedException e) {
+            return Map.of("RspCode", "02", "Message", "Order already confirmed");
+        } catch (PaymentNotFoundException e) {
+            return Map.of("RspCode", "01", "Message", "Order not found");
+        } catch (InvalidAmountException e) {
+            return Map.of("RspCode", "04", "Message", "Invalid amount");
+        } catch (InvalidChecksumException e) {
+            return Map.of("RspCode", "97", "Message", "Invalid checksum");
+        } catch (Exception e) {
+            return Map.of("RspCode", "99", "Message", "Unknown error");
+        }
+    }
 
-        String calculatedHash = hmacSHA512(vnPayConfig.getHashSecret(), buildHashData(vnpayParams));
-        if (!calculatedHash.equalsIgnoreCase(vnpSecureHash)) {
-            throw new RuntimeException("Invalid checksum from VNPAY");
+    private Payment processVnPayCallback(Map<String, String> vnpayParams, boolean reportAlreadyProcessed) {
+        Map<String, String> params = new HashMap<>(vnpayParams);
+        verifyChecksum(params);
+
+        String txnRef = params.get("vnp_TxnRef");
+        Payment payment = paymentRepository.findByTxnRef(txnRef)
+                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + txnRef));
+        Booking booking = payment.getBooking();
+
+        BigDecimal amount = new BigDecimal(params.get("vnp_Amount"))
+                .divide(BigDecimal.valueOf(100));
+        if (amount.compareTo(payment.getAmount()) != 0) {
+            updateVnPayMetadata(payment, params);
+            paymentRepository.save(payment);
+            throw new InvalidAmountException("Invalid amount for payment " + txnRef);
         }
 
-        String orderInfo = vnpayParams.get("vnp_OrderInfo");
-        UUID bookingId = UUID.fromString(orderInfo.replace("Thanh toan booking ", ""));
+        updateVnPayMetadata(payment, params);
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
+        if (payment.getStatus() != PaymentStatus.INITIATED) {
+            paymentRepository.save(payment);
+            if (reportAlreadyProcessed) {
+                throw new AlreadyProcessedException("Payment already processed: " + txnRef);
+            }
+            return payment;
+        }
 
-        BigDecimal amount = new BigDecimal(vnpayParams.get("vnp_Amount"))
-                .divide(BigDecimal.valueOf(100));
+        boolean success = "00".equals(params.get("vnp_ResponseCode"))
+                && "00".equals(params.get("vnp_TransactionStatus"));
 
-        boolean success = "00".equals(vnpayParams.get("vnp_ResponseCode"));
-
-        Payment payment = Payment.builder()
-                .booking(booking)
-                .amount(amount)
-                .method("VNPAY")
-                .status(success ? PaymentStatus.PAID : PaymentStatus.FAILED)
-                .build();
+        payment.setStatus(success ? PaymentStatus.PAID : PaymentStatus.FAILED);
 
         if (success) {
             booking.setStatus(BookingStatus.APPROVED);
-        } else {
+        } else if (!paymentRepository.existsByBooking_IdAndStatus(booking.getId(), PaymentStatus.PAID)) {
             booking.setStatus(BookingStatus.CANCELLED);
             slotService.deleteByBookingId(booking.getId());
         }
@@ -138,24 +159,49 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.save(payment);
     }
 
+    private void verifyChecksum(Map<String, String> params) {
+        String vnpSecureHash = params.get("vnp_SecureHash");
+
+        params.remove("vnp_SecureHash");
+        params.remove("vnp_SecureHashType");
+
+        String calculatedHash = hmacSHA512(vnPayConfig.getHashSecret(), buildHashData(params));
+        if (vnpSecureHash == null || !calculatedHash.equalsIgnoreCase(vnpSecureHash)) {
+            throw new InvalidChecksumException("Invalid checksum from VNPAY");
+        }
+    }
+
+    private void updateVnPayMetadata(Payment payment, Map<String, String> params) {
+        payment.setVnpTransactionNo(params.get("vnp_TransactionNo"));
+        payment.setBankCode(params.get("vnp_BankCode"));
+        payment.setResponseCode(params.get("vnp_ResponseCode"));
+        payment.setTransactionStatus(params.get("vnp_TransactionStatus"));
+        payment.setPayDate(params.get("vnp_PayDate"));
+        payment.setRawCallback(buildHashData(params));
+    }
+
+    private String generateTxnRef() {
+        return "PAY-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
     private String buildHashData(Map<String, String> params) {
         List<String> fieldNames = new ArrayList<>(params.keySet());
         Collections.sort(fieldNames);
 
         StringBuilder hashData = new StringBuilder();
+        boolean first = true;
 
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String name = fieldNames.get(i);
+        for (String name : fieldNames) {
             String value = params.get(name);
 
             if (value != null && !value.isEmpty()) {
+                if (!first) {
+                    hashData.append('&');
+                }
                 hashData.append(name)
                         .append('=')
                         .append(URLEncoder.encode(value, StandardCharsets.US_ASCII));
-
-                if (i < fieldNames.size() - 1) {
-                    hashData.append('&');
-                }
+                first = false;
             }
         }
 
@@ -180,6 +226,30 @@ public class PaymentServiceImpl implements PaymentService {
             return hash.toString();
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException("Error while generating HMAC SHA512 hash", e);
+        }
+    }
+
+    private static class InvalidChecksumException extends RuntimeException {
+        private InvalidChecksumException(String message) {
+            super(message);
+        }
+    }
+
+    private static class PaymentNotFoundException extends RuntimeException {
+        private PaymentNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    private static class InvalidAmountException extends RuntimeException {
+        private InvalidAmountException(String message) {
+            super(message);
+        }
+    }
+
+    private static class AlreadyProcessedException extends RuntimeException {
+        private AlreadyProcessedException(String message) {
+            super(message);
         }
     }
 }

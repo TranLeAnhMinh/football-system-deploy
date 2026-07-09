@@ -96,6 +96,7 @@
 
       <div class="payment-box">
         <form action="/payments/${booking.id}" method="post">
+          <input type="hidden" name="_csrf" value="${decodeURIComponent(getCookie("XSRF-TOKEN") || "")}">
           <button type="submit" class="pay-btn">${window.i18n["booking.summary.payButton"]}</button>
         </form>
       </div>
@@ -104,3 +105,7 @@
 
   document.addEventListener("DOMContentLoaded", loadBooking);
 })();
+
+
+
+

@@ -26,6 +26,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwt;
     private final TokenBlacklist blacklist;
     private final UserSessionRepository sessionRepo;
+    private final JwtCookieService jwtCookieService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
@@ -47,10 +48,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         // ✅ 2. Nếu có token thì parse và xác thực, nếu không thì bỏ qua — KHÔNG ép phải có token
-        String header = req.getHeader(HttpHeaders.AUTHORIZATION);
-        if (header != null && header.startsWith("Bearer ")) {
+        String token = jwtCookieService.getAccessToken(req);
+        if (token == null || token.isBlank()) {
+            String header = req.getHeader(HttpHeaders.AUTHORIZATION);
+            if (header != null && header.startsWith("Bearer ")) {
+                token = header.substring(7);
+            }
+        }
+        if (token != null && !token.isBlank()) {
             try {
-                String token = header.substring(7);
                 var claims = jwt.parse(token).getBody();
 
                 UUID sid = UUID.fromString((String) claims.get("sid"));

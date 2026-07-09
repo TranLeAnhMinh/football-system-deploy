@@ -29,7 +29,6 @@ async function loadPitchDetail() {
     try {
         const res = await fetch(`/api/adminsystem/pitches/${pitchId}`, {
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             }
         });
 
@@ -47,17 +46,19 @@ async function loadPitchDetail() {
             p.images?.[0]?.url ||
             "/images/no-image.png";
 
+        const coverUrl = sanitizeResourceUrl(cover, "/images/no-image.png");
+
         container.innerHTML = `
             <div class="pitch-detail-card">
-                <img src="${cover}" class="pitch-detail-img">
+                <img src="${escapeHtmlAttr(coverUrl)}" class="pitch-detail-img">
 
                 <div class="pitch-detail-info">
-                    <h3>${p.name}</h3>
+                    <h3>${escapeHtml(p.name)}</h3>
 
-                    <p><strong>${i18n.location}</strong> ${p.location ?? ""}</p>
-                    <p><strong>${i18n.description}</strong> ${p.description ?? ""}</p>
-                    <p><strong>${i18n.branch}</strong> ${p.branchName ?? ""}</p>
-                    <p><strong>${i18n.type}</strong> ${p.pitchTypeName ?? ""}</p>
+                    <p><strong>${escapeHtml(i18n.location)}</strong> ${escapeHtml(p.location ?? "")}</p>
+                    <p><strong>${escapeHtml(i18n.description)}</strong> ${escapeHtml(p.description ?? "")}</p>
+                    <p><strong>${escapeHtml(i18n.branch)}</strong> ${escapeHtml(p.branchName ?? "")}</p>
+                    <p><strong>${escapeHtml(i18n.type)}</strong> ${escapeHtml(p.pitchTypeName ?? "")}</p>
 
                     <p>
                         <strong>${i18n.status}</strong>
@@ -114,18 +115,19 @@ function loadGallery(images) {
 
     gallery.innerHTML = images.map(img => {
         const isCover = img.cover === true || img.isCover === true;
+        const imageUrl = sanitizeResourceUrl(img.url, "/images/no-image.png");
 
         return `
             <div class="gallery-item ${isCover ? "is-cover" : ""}">
-                <img src="${img.url}" alt="pitch-image">
+                <img src="${escapeHtmlAttr(imageUrl)}" alt="pitch-image">
 
                 <div class="gallery-overlay">
                     ${isCover ? `<span class="cover-badge">${i18n.imageCover}</span>` : ""}
                     <button
                         type="button"
                         class="gallery-delete-btn"
-                        data-image-id="${img.id}"
-                        title="${i18n.imageDelete}">
+                        data-image-id="${escapeHtmlAttr(img.id)}"
+                        title="${escapeHtmlAttr(i18n.imageDelete)}">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
@@ -194,7 +196,6 @@ async function uploadPitchImages() {
         const res = await fetch(`/api/adminsystem/pitches/${pitchId}/images`, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             },
             body: formData
         });
@@ -232,7 +233,6 @@ async function deletePitchImage(imageId) {
         const res = await fetch(`/api/adminsystem/images/${imageId}`, {
             method: "DELETE",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             }
         });
 
@@ -284,7 +284,6 @@ document.getElementById("savePitchBtn")?.addEventListener("click", async () => {
         const res = await fetch(`/api/adminsystem/pitches/${pitchId}`, {
             method: "PUT",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(payload)
@@ -308,3 +307,24 @@ document.getElementById("savePitchBtn")?.addEventListener("click", async () => {
         alert(i18n.error);
     }
 });
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value) {
+    return escapeHtml(value);
+}
+
+function sanitizeResourceUrl(value, fallback) {
+    const url = String(value || "").trim();
+    if (/^(https?:\/\/|\/)/i.test(url)) {
+        return url;
+    }
+    return fallback;
+}

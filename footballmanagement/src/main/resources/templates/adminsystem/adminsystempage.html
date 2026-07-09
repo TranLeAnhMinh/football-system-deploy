@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -61,11 +61,11 @@
                 <p class="rev-card-title"
                    id="daily-title"
                    th:attr="data-i18n-today=#{revenue.daily.today}, data-i18n-netdate=#{revenue.daily.onDate}">
-                    Today’s Net Revenue
+                    Todayâ€™s Net Revenue
                 </p>
                 <p id="daily-net" class="rev-money">0</p>
                 <p class="rev-subtext" th:text="#{revenue.daily.formula}">
-                    = Approved − Cancelled/Refunded
+                    = Approved âˆ’ Cancelled/Refunded
                 </p>
             </div>
 
@@ -87,7 +87,7 @@
                 <h3 th:text="#{revenue.monthly.title}">Monthly Revenue</h3>
                 <div class="rev-total">
                     <span th:text="#{revenue.system.totalPrefix}">Total net revenue in</span>
-                    <span id="monthly-year">—</span>:
+                    <span id="monthly-year">â€”</span>:
                     <strong id="monthly-total">0</strong>
                 </div>
             </div>
@@ -131,8 +131,8 @@
     };
 </script>
 
-<script th:src="@{/js/system_revenues.js}"></script>
 <script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/system_revenues.js}"></script>
 <script th:src="@{/js/lang-switcher.js}"></script>
 
 </body>

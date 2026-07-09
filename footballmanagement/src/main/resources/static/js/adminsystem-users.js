@@ -24,9 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
    2. LOAD USERS
 ============================================================ */
 async function loadUsers() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return alert("Token missing");
-
   const tableBody = document.getElementById("userTableBody");
   if (!tableBody) return;
 
@@ -43,7 +40,7 @@ async function loadUsers() {
 
   try {
     const res = await fetch(`/api/adminsystem/users?${params.toString()}`, {
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: {}
     });
 
     if (!res.ok) {
@@ -210,12 +207,9 @@ async function toggleUserStatus(userId, role, status) {
     alert(i18n.cannotDeactivateAdminSystem);
     return;
   }
-
-  const token = localStorage.getItem("accessToken");
-
-  const res = await fetch(`/api/adminsystem/users/${userId}/toggle-status`, {
+const res = await fetch(`/api/adminsystem/users/${userId}/toggle-status`, {
     method: "PATCH",
-    headers: { "Authorization": `Bearer ${token}` }
+    headers: {}
   });
 
   if (!res.ok) return alert(i18n.error);
@@ -224,13 +218,11 @@ async function toggleUserStatus(userId, role, status) {
 }
 
 async function deleteAdminBranch(userId) {
-  const token = localStorage.getItem("accessToken");
-
-  if (!confirm(i18n.confirmDeleteAdminBranch)) return;
+if (!confirm(i18n.confirmDeleteAdminBranch)) return;
 
   const res = await fetch(`/api/adminsystem/users/${userId}/admin-branch`, {
     method: "DELETE",
-    headers: { "Authorization": `Bearer ${token}` }
+    headers: {}
   });
 
   if (!res.ok) {
@@ -262,13 +254,12 @@ function closeApproveModal() {
 btnCancel?.addEventListener("click", closeApproveModal);
 
 btnConfirm?.addEventListener("click", async () => {
-  const token = localStorage.getItem("accessToken");
-  const userId = document.getElementById("approveUserId").value;
+const userId = document.getElementById("approveUserId").value;
   const branchId = document.getElementById("approveBranchId").value;
 
   const res = await fetch(`/api/adminsystem/users/${userId}/approve-branch/${branchId}`, {
     method: "PATCH",
-    headers: { "Authorization": `Bearer ${token}` }
+    headers: {}
   });
 
   if (!res.ok) return alert(i18n.error);
@@ -278,15 +269,14 @@ btnConfirm?.addEventListener("click", async () => {
 });
 
 async function loadAvailableBranches() {
-  const token = localStorage.getItem("accessToken");
-  const dropdown = document.getElementById("approveBranchId");
+const dropdown = document.getElementById("approveBranchId");
 
   // clear old options
   dropdown.innerHTML = `<option value="">Đang tải...</option>`;
 
   try {
     const res = await fetch(`/api/adminsystem/users/branches/available`, {
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: {}
     });
 
     if (!res.ok) {
@@ -310,3 +300,7 @@ async function loadAvailableBranches() {
     dropdown.innerHTML = `<option value="">Lỗi server</option>`;
   }
 }
+
+
+
+

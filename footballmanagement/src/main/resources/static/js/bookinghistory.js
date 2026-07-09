@@ -5,16 +5,9 @@ let totalPages = 0;
 
 // =================== Load danh sách đặt sân ===================
 async function loadBookingHistory(page = 0) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert("Bạn chưa đăng nhập");
-    window.location.href = "/login";
-    return;
-  }
-
-  try {
+try {
     const res = await fetch(`/api/bookings/history?page=${page}&size=${pageSize}`, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
     if (!res.ok) throw new Error("Không thể tải lịch sử đặt sân");
 
@@ -62,16 +55,9 @@ function renderRows(items) {
 
 // =================== Gọi API chi tiết + mở modal ===================
 async function showBookingDetail(bookingId) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert("Bạn chưa đăng nhập");
-    window.location.href = "/login";
-    return;
-  }
-
-  try {
+try {
     const res = await fetch(`/api/bookings/${bookingId}`, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
     if (!res.ok) throw new Error("Không thể tải chi tiết đặt sân");
 
@@ -162,3 +148,7 @@ function mapStatus(status) {
   if (!status) return "-";
   return statusTextMap[status] || status;
 }
+
+
+
+

@@ -1,13 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title th:text="#{revenue.title}">Doanh thu chi nhánh</title>
+  <title th:text="#{revenue.title}">Doanh thu chi nhÃ¡nh</title>
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-   <!-- ✅ Font Awesome (icon sidebar) -->
+   <!-- âœ… Font Awesome (icon sidebar) -->
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" th:href="@{/css/home.css}" />
@@ -18,19 +18,19 @@
     <div th:replace="layouts/adminbranchsidebar :: adminSidebar"></div>
 
     <main class="main-content">
-      <h2 th:text="#{revenue.title}">Doanh thu chi nhánh</h2>
+      <h2 th:text="#{revenue.title}">Doanh thu chi nhÃ¡nh</h2>
 
       <div id="rev-alert" class="alert alert-error" style="display:none;"></div>
 
       <!-- FILTER BAR -->
       <section class="rev-filters">
         <div class="rev-filter-group">
-          <label for="rev-date" th:text="#{revenue.filter.date}">Ngày (Daily)</label>
+          <label for="rev-date" th:text="#{revenue.filter.date}">NgÃ y (Daily)</label>
           <input id="rev-date" type="date" />
         </div>
 
         <div class="rev-filter-group">
-          <label for="rev-year" th:text="#{revenue.filter.year}">Năm (Monthly)</label>
+          <label for="rev-year" th:text="#{revenue.filter.year}">NÄƒm (Monthly)</label>
           <select id="rev-year"></select>
         </div>
 
@@ -45,20 +45,20 @@
         <div class="rev-card">
           <p class="rev-card-title" id="daily-title"
               th:attr="data-i18n-today=#{revenue.daily.today}, data-i18n-netdate=#{revenue.daily.onDate}">
-              Doanh thu ròng hôm nay
+              Doanh thu rÃ²ng hÃ´m nay
           </p>
           <p id="daily-net" class="rev-money">0</p>
-          <p class="rev-subtext" th:text="#{revenue.daily.formula}">= Đã duyệt − Hủy/Hoàn</p>
+          <p class="rev-subtext" th:text="#{revenue.daily.formula}">= ÄÃ£ duyá»‡t âˆ’ Há»§y/HoÃ n</p>
         </div>
 
         <div class="rev-card">
-          <p class="rev-card-title" th:text="#{revenue.daily.approved}">Đã duyệt</p>
+          <p class="rev-card-title" th:text="#{revenue.daily.approved}">ÄÃ£ duyá»‡t</p>
           <p id="daily-approved" class="rev-money">0</p>
           <div class="rev-pill rev-pill-green" id="daily-approved-pct">0%</div>
         </div>
 
         <div class="rev-card">
-          <p class="rev-card-title" th:text="#{revenue.daily.cancelled}">Hủy/Hoàn</p>
+          <p class="rev-card-title" th:text="#{revenue.daily.cancelled}">Há»§y/HoÃ n</p>
           <p id="daily-cancelled" class="rev-money">0</p>
           <div class="rev-pill rev-pill-red" id="daily-cancelled-pct">0%</div>
         </div>
@@ -67,10 +67,10 @@
       <!-- MONTHLY -->
       <section class="rev-panel">
         <div class="rev-panel-header">
-          <h3 th:text="#{revenue.monthly.title}">Doanh thu theo tháng</h3>
+          <h3 th:text="#{revenue.monthly.title}">Doanh thu theo thÃ¡ng</h3>
           <div class="rev-total">
-            <span th:text="#{revenue.monthly.totalPrefix}">Tổng doanh thu ròng năm</span>
-            <span id="monthly-year">—</span>:
+            <span th:text="#{revenue.monthly.totalPrefix}">Tá»•ng doanh thu rÃ²ng nÄƒm</span>
+            <span id="monthly-year">â€”</span>:
             <strong id="monthly-total">0</strong>
           </div>
         </div>
@@ -84,10 +84,10 @@
             <table class="rev-table">
               <thead>
                 <tr>
-                  <th th:text="#{revenue.table.month}">Tháng</th>
-                  <th th:text="#{revenue.table.approved}">Đã duyệt</th>
-                  <th th:text="#{revenue.table.cancelled}">Hủy/Hoàn</th>
-                  <th th:text="#{revenue.table.net}">Ròng</th>
+                  <th th:text="#{revenue.table.month}">ThÃ¡ng</th>
+                  <th th:text="#{revenue.table.approved}">ÄÃ£ duyá»‡t</th>
+                  <th th:text="#{revenue.table.cancelled}">Há»§y/HoÃ n</th>
+                  <th th:text="#{revenue.table.net}">RÃ²ng</th>
                 </tr>
               </thead>
               <tbody id="monthly-tbody"></tbody>
@@ -100,7 +100,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- ✅ Inject i18n keys -->
+  <!-- âœ… Inject i18n keys -->
 <script th:inline="javascript">
   const I18N = {
     chartTitle: '[[#{revenue.chart.title}]]',
@@ -112,7 +112,8 @@
   };
 </script>
 
-  <script th:src="@{/js/revenue.js}"></script>
   <script th:src="@{/js/auth.js}"></script>
+  <script th:src="@{/js/revenue.js}"></script>
 </body>
 </html>
+

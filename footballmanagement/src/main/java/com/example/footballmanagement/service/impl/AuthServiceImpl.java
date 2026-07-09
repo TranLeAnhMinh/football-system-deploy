@@ -8,7 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.footballmanagement.dto.request.LoginRequest;
-import com.example.footballmanagement.dto.request.RefreshRequest;
 import com.example.footballmanagement.dto.response.JwtResponse;
 import com.example.footballmanagement.entity.User;
 import com.example.footballmanagement.entity.UserSession;
@@ -66,9 +65,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public JwtResponse refresh(RefreshRequest req) {
-        var claims = jwt.parse(req.getRefreshToken()).getBody();
-        if (jwt.isExpired(req.getRefreshToken())) {
+    public JwtResponse refresh(String refreshToken) {
+        var claims = jwt.parse(refreshToken).getBody();
+        if (jwt.isExpired(refreshToken)) {
             throw new RuntimeException("Refresh token expired");
         }
 

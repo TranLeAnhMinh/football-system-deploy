@@ -1,17 +1,9 @@
-async function loadAdminPitches(pitchTypeId) {
+﻿async function loadAdminPitches(pitchTypeId) {
   const container = document.getElementById("pitchContainer");
   container.innerHTML = `<p class="loading-text">${i18n.loading}</p>`;
-
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    container.innerHTML = `<p class="error-text">${i18n.error}</p>`;
-    return;
-  }
-
-  try {
+try {
     const res = await fetch("/api/admin/pitches", {
       headers: {
-        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
       }
     });
@@ -66,3 +58,6 @@ async function loadAdminPitches(pitchTypeId) {
 function goToMaintenance(pitchId) {
   window.location.href = `/admin/maintenance/${pitchId}`;
 }
+
+
+

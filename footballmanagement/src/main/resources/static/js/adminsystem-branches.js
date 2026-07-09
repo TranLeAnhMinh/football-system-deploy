@@ -1,17 +1,9 @@
 async function loadAdminBranches() {
     const container = document.getElementById("branchContainer");
     container.innerHTML = `<p class="loading-text">${i18n.loading}</p>`;
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-        container.innerHTML = `<p class="error-text">${i18n.error}</p>`;
-        return;
-    }
-
-    try {
+try {
         const res = await fetch("/api/adminsystem/branches", {
             headers: {
-                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
         });
@@ -56,7 +48,7 @@ async function loadAdminBranches() {
                         </button>
                     </div>
 
-                    <button class="btn-add-pitch" onclick="openPitchModal('${b.id}', '${escapeHtml(b.name)}')">
+                    <button class="btn-add-pitch" onclick="openPitchModal('${escapeHtmlAttr(b.id)}', '${escapeHtmlAttr(b.name)}')">
                         ${`+ ${i18n.addPitch}`}
                     </button>
                 </div>
@@ -65,7 +57,7 @@ async function loadAdminBranches() {
 
                 <div class="admin-pitch-list">
                     ${(b.pitches || []).map(p => `
-                        <div class="admin-pitch-card" onclick="goToPitch('${p.id}')">
+                        <div class="admin-pitch-card" onclick="goToPitch('${escapeHtmlAttr(p.id)}')">
                             <div class="pitch-content">
 
                                 <div class="pitch-title-row">
@@ -112,7 +104,7 @@ async function loadAdminBranches() {
 }
 
 function goToPitch(id) {
-    window.location.href = `/adminsystem/pitches/${id}`;
+    window.location.href = `/adminsystem/pitches/${encodeURIComponent(id)}`;
 }
 
 function openPitchModal(branchId, branchName) {
@@ -155,7 +147,6 @@ if (editBranchForm) {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                 },
                 body: JSON.stringify(payload)
             });
@@ -213,7 +204,6 @@ document.getElementById("createPitchForm").addEventListener("submit", async (e) 
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             },
             body: JSON.stringify(pitchJson)
         });
@@ -262,7 +252,6 @@ async function uploadPitchImagesInBackground(pitchId, files) {
         const res = await fetch(`/api/adminsystem/pitches/${pitchId}/images`, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
             },
             body: fd
         });
@@ -315,3 +304,7 @@ function escapeHtmlAttr(str) {
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#39;");
 }
+
+
+
+

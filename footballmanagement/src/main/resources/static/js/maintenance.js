@@ -1,8 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const pitchId = window.PITCH_ID;
-  const token = localStorage.getItem("accessToken");
-
-  let calendar;
+let calendar;
   let isRefreshing = false;
   let refreshInterval = null;
 
@@ -14,12 +12,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => box.remove(), 3500);
   }
 
-  if (!pitchId || !token) {
+  if (!pitchId) {
     showToast("⚠️ Thiếu thông tin xác thực hoặc sân!", "error");
     return;
   }
 
-  const authHeaders = { Authorization: "Bearer " + token };
+  const authHeaders = {};
   const calendarEl = document.getElementById("calendar");
 
   /* ---------- Helper ---------- */
@@ -302,3 +300,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 });
+
+
+

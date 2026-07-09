@@ -1,5 +1,4 @@
-  const token = localStorage.getItem("accessToken");
-  const authHeaders = token ? { "Authorization": "Bearer " + token } : {};
+  const authHeaders = {};
   let selectedVoucher = null;
   let calendar = null;
   let previewEvents = []; // 🔥 highlight preview
@@ -31,12 +30,6 @@ let refreshInterval = null;
 
   // 🔥 Hàm mở Booking Summary (redirect sang trang summary)
   function goToSummaryPage(bookingId) {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      alert("Bạn chưa đăng nhập!");
-      window.location.href = "/login";
-      return;
-    }
 
     // Lưu tạm bookingId vào localStorage (nếu cần dùng lại sau)
     localStorage.setItem("lastBookingId", bookingId);
@@ -457,3 +450,8 @@ refreshInterval = setInterval(async () => {
   });
 
   });
+
+
+
+
+

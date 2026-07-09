@@ -1,17 +1,9 @@
 async function loadAdminVouchers() {
     const container = document.getElementById("voucherContainer");
     container.innerHTML = `<p class="loading-text">${i18n.loading}</p>`;
-
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-        container.innerHTML = `<p class="error-text">${i18n.error}</p>`;
-        return;
-    }
-
-    try {
+try {
         const res = await fetch("/api/adminsystem/vouchers", {
             headers: {
-                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             }
         });
@@ -113,8 +105,7 @@ document.getElementById("editVoucherForm")
         e.preventDefault();
 
         const form = e.target;
-        const token = localStorage.getItem("accessToken");
-        const voucherId = form.voucherId.value;
+const voucherId = form.voucherId.value;
 
         const payload = {
             code: form.code.value,
@@ -131,7 +122,6 @@ document.getElementById("editVoucherForm")
             const res = await fetch(`/api/adminsystem/vouchers/${voucherId}`, {
                 method: "PUT",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
@@ -157,19 +147,12 @@ document.getElementById("editVoucherForm")
 
 /* ================= TOGGLE ACTIVE / INACTIVE ================= */
 async function toggleVoucherActive(id) {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-        alert(i18n.error);
-        return;
-    }
-
-    if (!confirm(i18n.confirmToggle)) return;
+if (!confirm(i18n.confirmToggle)) return;
 
     try {
         const res = await fetch(`/api/adminsystem/vouchers/${id}/toggle-active`, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${token}`
             }
         });
 
@@ -188,19 +171,12 @@ async function toggleVoucherActive(id) {
 
 /* ================= HARD DELETE ================= */
 async function hardDeleteVoucher(id) {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-        alert(i18n.error);
-        return;
-    }
-
-    if (!confirm(i18n.confirmHardDelete)) return;
+if (!confirm(i18n.confirmHardDelete)) return;
 
     try {
         const res = await fetch(`/api/adminsystem/vouchers/${id}/hard`, {
             method: "DELETE",
             headers: {
-                "Authorization": `Bearer ${token}`
             }
         });
 
@@ -223,9 +199,7 @@ document.getElementById("createVoucherForm")
         e.preventDefault();
 
         const form = e.target;
-        const token = localStorage.getItem("accessToken");
-
-        const payload = {
+const payload = {
             code: form.code.value,
             type: form.type.value,
             value: Number(form.value.value),
@@ -240,7 +214,6 @@ document.getElementById("createVoucherForm")
             const res = await fetch("/api/adminsystem/vouchers", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(payload)
@@ -289,3 +262,6 @@ function toDatetimeLocal(iso) {
     const local = new Date(d.getTime() - offset * 60000);
     return local.toISOString().slice(0, 16);
 }
+
+
+

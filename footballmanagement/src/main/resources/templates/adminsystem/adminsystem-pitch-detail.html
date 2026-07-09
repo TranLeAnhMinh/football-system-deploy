@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -43,9 +43,9 @@
 
         <!-- Gallery -->
         <div class="gallery-container">
-            <button class="gallery-nav" id="galleryPrev">←</button>
+            <button class="gallery-nav" id="galleryPrev">â†</button>
             <div class="gallery-images" id="galleryImages"></div>
-            <button class="gallery-nav" id="galleryNext">→</button>
+            <button class="gallery-nav" id="galleryNext">â†’</button>
         </div>
 
         <a href="/adminsystem/branches" class="back-btn" id="backBtn"></a>
@@ -58,7 +58,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title" th:text="#{pitch.edit.title}">Sửa sân</h5>
+                <h5 class="modal-title" th:text="#{pitch.edit.title}">Sá»­a sÃ¢n</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
@@ -66,34 +66,34 @@
                 <form id="editPitchForm">
 
                     <div class="mb-3">
-                        <label class="form-label" th:text="#{pitch.name}">Tên sân</label>
+                        <label class="form-label" th:text="#{pitch.name}">TÃªn sÃ¢n</label>
                         <input id="editName" type="text" class="form-control">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" th:text="#{pitch.location}">Địa chỉ sân</label>
+                        <label class="form-label" th:text="#{pitch.location}">Äá»‹a chá»‰ sÃ¢n</label>
                         <input id="editLocation" type="text" class="form-control">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" th:text="#{pitch.description}">Mô tả</label>
+                        <label class="form-label" th:text="#{pitch.description}">MÃ´ táº£</label>
                         <textarea id="editDescription" class="form-control" rows="4"></textarea>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" th:text="#{pitch.type}">Loại sân</label>
+                        <label class="form-label" th:text="#{pitch.type}">Loáº¡i sÃ¢n</label>
                         <select id="editPitchType" class="form-select">
-                            <option value="5" th:text="#{pitch.type.5}">5 người</option>
-                            <option value="7" th:text="#{pitch.type.7}">7 người</option>
-                            <option value="11" th:text="#{pitch.type.11}">11 người</option>
+                            <option value="5" th:text="#{pitch.type.5}">5 ngÆ°á»i</option>
+                            <option value="7" th:text="#{pitch.type.7}">7 ngÆ°á»i</option>
+                            <option value="11" th:text="#{pitch.type.11}">11 ngÆ°á»i</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" th:text="#{pitch.status}">Trạng thái</label>
+                        <label class="form-label" th:text="#{pitch.status}">Tráº¡ng thÃ¡i</label>
                         <select id="editActive" class="form-select">
-                            <option value="true" th:text="#{pitch.active}">Đang hoạt động</option>
-                            <option value="false" th:text="#{pitch.inactive}">Ngưng hoạt động</option>
+                            <option value="true" th:text="#{pitch.active}">Äang hoáº¡t Ä‘á»™ng</option>
+                            <option value="false" th:text="#{pitch.inactive}">NgÆ°ng hoáº¡t Ä‘á»™ng</option>
                         </select>
                     </div>
 
@@ -106,14 +106,14 @@
                     class="btn btn-secondary"
                     data-bs-dismiss="modal"
                     th:text="#{modal.cancel}">
-                    Hủy
+                    Há»§y
                 </button>
                 <button
                     type="button"
                     class="btn btn-primary"
                     id="savePitchBtn"
                     th:text="#{modal.save}">
-                    Lưu
+                    LÆ°u
                 </button>
             </div>
 
@@ -136,7 +136,7 @@
         description: /*[[#{pitch.description}]]*/ "Description",
         edit: /*[[#{pitch.edit}]]*/ "Edit pitch",
         editPrice: /*[[#{pitch.edit.price}]]*/ "Edit price",
-        back: /*[[#{pitch.back}]]*/ "← Back to Pitches",
+        back: /*[[#{pitch.back}]]*/ "â† Back to Pitches",
 
         imageChoose: /*[[#{pitch.image.choose}]]*/ "Choose images",
         imageUpload: /*[[#{pitch.image.upload}]]*/ "Upload images",
@@ -153,8 +153,8 @@
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/js/adminsystem-pitch-detail.js"></script>
 <script th:src="@{/js/auth.js}"></script>
+<script src="/js/adminsystem-pitch-detail.js"></script>
 
 </body>
 </html>

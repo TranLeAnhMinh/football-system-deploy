@@ -17,14 +17,7 @@ function getFilterParams() {
 
 // =================== Load danh sách đặt sân (với filter đầy đủ) ===================
 async function loadBranchBookings(page = 0) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert(i18n.alert?.notLoggedIn || "You are not logged in");
-    window.location.href = "/login";
-    return;
-  }
-
-  const filters = getFilterParams();
+const filters = getFilterParams();
 
   const params = new URLSearchParams({
     page,
@@ -38,7 +31,7 @@ async function loadBranchBookings(page = 0) {
 
   try {
     const res = await fetch(`/api/bookings/branch?${params}`, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
     if (!res.ok) throw new Error(i18n.error?.loadFail || "Failed to load booking list");
 
@@ -125,14 +118,7 @@ function getActionButtons(b) {
 
 // =================== Gọi API cập nhật trạng thái ===================
 async function updateBookingStatus(bookingId, oldStatus, newStatus) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert(i18n.alert?.notLoggedIn || "You are not logged in");
-    window.location.href = "/login";
-    return;
-  }
-
-  const confirmText =
+const confirmText =
     newStatus === "REFUNDED"
       ? (i18n.confirm?.refund || "Are you sure to refund this booking?")
       : (i18n.confirm?.cancel || "Are you sure to cancel this booking?");
@@ -153,7 +139,6 @@ async function updateBookingStatus(bookingId, oldStatus, newStatus) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + token
       },
       body: JSON.stringify(body)
     });
@@ -263,3 +248,7 @@ window.closeModal = closeModal;
 window.updateBookingStatus = updateBookingStatus;
 window.changePageSize = changePageSize;
 window.resetFilters = resetFilters;
+
+
+
+

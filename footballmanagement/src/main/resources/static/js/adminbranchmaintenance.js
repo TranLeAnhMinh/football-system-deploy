@@ -28,14 +28,7 @@ function toOffsetDateTime(localValue) {
 
 // =================== Load danh sách ===================
 async function loadMaintenanceHistory(page = 0) {
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert(i18n.alert.notLoggedIn);
-    window.location.href = "/login";
-    return;
-  }
-
-  const filters = getFilterParams();
+const filters = getFilterParams();
 
   const params = new URLSearchParams({
     page,
@@ -47,7 +40,7 @@ async function loadMaintenanceHistory(page = 0) {
 
   try {
     const res = await fetch(`/api/admin/maintenance-windows/history?${params}`, {
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
     if (!res.ok)
       throw new Error(i18n.error?.loadFail || "Không thể tải danh sách lịch bảo trì");
@@ -101,18 +94,10 @@ function renderMaintenanceRows(items) {
 // =================== Xoá lịch bảo trì ===================
 async function deleteMaintenance(id) {
   if (!confirm(i18n.confirm.delete)) return;
-
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    alert(i18n.alert.notLoggedIn);
-    window.location.href = "/login";
-    return;
-  }
-
-  try {
+try {
     const res = await fetch(`/api/admin/maintenance-windows/${id}`, {
       method: "DELETE",
-      headers: { Authorization: "Bearer " + token }
+      headers: {}
     });
 
     if (!res.ok) throw new Error(i18n.alert.deleteFail);
@@ -177,3 +162,7 @@ window.deleteMaintenance = deleteMaintenance;
 window.applyFilters = applyFilters;
 window.resetFilters = resetFilters;
 window.changePageSize = changePageSize;
+
+
+
+

@@ -11,17 +11,9 @@
 async function loadAdminPitches(pitchTypeId) {
   const container = document.getElementById("pitchContainer");
   container.innerHTML = `<p class="loading-text">${i18n.loading}</p>`;
-
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    container.innerHTML = `<p class="error-text">${i18n.error}</p>`;
-    return;
-  }
-
-  try {
+try {
     const res = await fetch("/api/admin/pitches", {
       headers: {
-        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
       }
     });
@@ -40,29 +32,29 @@ async function loadAdminPitches(pitchTypeId) {
     }
 
     let html = `
-      <h3 class="pitch-type-title">${selectedType.name}</h3>
+      <h3 class="pitch-type-title">${escapeHtml(selectedType.name)}</h3>
       <div class="admin-pitch-list">
         ${selectedType.pitches.map(p => {
 
           // Ảnh cover
           const coverImg = p.images?.find(img => img.cover === true);
-          const coverUrl = coverImg?.url ?? "/images/default_pitch.jpg";
+          const coverUrl = sanitizeResourceUrl(coverImg?.url, "/images/default_pitch.jpg");
 
           return `
-            <div class="admin-pitch-card" onclick="goToMaintenance('${p.id}')">
+            <div class="admin-pitch-card" onclick="goToMaintenance('${escapeHtmlAttr(p.id)}')">
 
               <div class="pitch-image">
-                <img src="${coverUrl}" alt="${p.name}">
+                <img src="${escapeHtmlAttr(coverUrl)}" alt="${escapeHtmlAttr(p.name)}">
               </div>
 
               <div class="pitch-content">
-                <h4>${p.name}</h4>
+                <h4>${escapeHtml(p.name)}</h4>
 
                 <p class="location">
-                  <i class="fa-solid fa-location-dot"></i> ${p.location}
+                  <i class="fa-solid fa-location-dot"></i> ${escapeHtml(p.location)}
                 </p>
 
-                <p class="description">${p.description}</p>
+                <p class="description">${escapeHtml(p.description)}</p>
 
                 <p class="status">
                   ${p.active
@@ -100,17 +92,9 @@ async function loadAdminPitches(pitchTypeId) {
 async function loadAdminBranches() {
   const container = document.getElementById("branchContainer");
   container.innerHTML = `<p class="loading-text">${i18n.loading}</p>`;
-
-  const token = localStorage.getItem("accessToken");
-  if (!token) {
-    container.innerHTML = `<p class="error-text">${i18n.error}</p>`;
-    return;
-  }
-
-  try {
+try {
     const res = await fetch("/api/admin/branches", {
       headers: {
-        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
       }
     });
@@ -131,15 +115,15 @@ async function loadAdminBranches() {
       <h3 class="branch-title">${i18n.branchTitle}</h3>
       <div class="admin-branch-list">
         ${branches.map(b => `
-          <div class="admin-branch-card" onclick="goToBranchDetail('${b.id}')">
+          <div class="admin-branch-card" onclick="goToBranchDetail('${escapeHtmlAttr(b.id)}')">
 
-            <h4>${b.name}</h4>
+            <h4>${escapeHtml(b.name)}</h4>
 
             <p class="location">
-              <i class="fa-solid fa-location-dot"></i> ${b.location}
+              <i class="fa-solid fa-location-dot"></i> ${escapeHtml(b.location)}
             </p>
 
-            <p class="description">${b.description || ""}</p>
+            <p class="description">${escapeHtml(b.description || "")}</p>
 
           </div>
         `).join("")}
@@ -171,21 +155,12 @@ async function initCreateBranchForm() {
     const location = document.getElementById("branchLocation").value.trim();
     const description = document.getElementById("branchDescription").value.trim();
     const messageBox = document.getElementById("branchMessage");
-
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
-      showError(messageBox, i18n.error);
-      return;
-    }
-
-    const payload = { name, location, description };
+const payload = { name, location, description };
 
     try {
       const res = await fetch("/api/admin/branches", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(payload)
@@ -220,13 +195,8 @@ async function initCreateBranchForm() {
 async function loadBranchDropdown() {
   const dropdown = document.getElementById("branchSelect");
   if (!dropdown) return;
-
-  const token = localStorage.getItem("accessToken");
-  if (!token) return;
-
   const res = await fetch("/api/admin/branches", {
     headers: {
-      "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json"
     }
   });
@@ -234,7 +204,7 @@ async function loadBranchDropdown() {
   const branches = await res.json();
 
   dropdown.innerHTML = branches
-    .map(b => `<option value="${b.id}">${b.name} - ${b.location}</option>`)
+    .map(b => `<option value="${escapeHtmlAttr(b.id)}">${escapeHtml(b.name)} - ${escapeHtml(b.location)}</option>`)
     .join("");
 }
 
@@ -260,10 +230,32 @@ function showSuccess(el, text) {
 ============================================================================ */
 
 function goToMaintenance(pitchId) {
-  window.location.href = `/admin/maintenance/${pitchId}`;
+  window.location.href = `/admin/maintenance/${encodeURIComponent(pitchId)}`;
 }
 
 function goToBranchDetail(branchId) {
-  window.location.href = `/admin/branches/${branchId}`;
+  window.location.href = `/admin/branches/${encodeURIComponent(branchId)}`;
 }
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value) {
+  return escapeHtml(value);
+}
+
+function sanitizeResourceUrl(value, fallback) {
+  const url = String(value || "").trim();
+  if (/^(https?:\/\/|\/)/i.test(url)) {
+    return url;
+  }
+  return fallback;
+}
+
 

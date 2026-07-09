@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+﻿document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registerForm");
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -25,3 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+
+
+

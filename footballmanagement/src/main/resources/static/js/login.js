@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
+                credentials: "same-origin",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
             });
@@ -19,8 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
 
                 // Lưu token vào localStorage
-                localStorage.setItem("accessToken", data.accessToken);
-                localStorage.setItem("refreshToken", data.refreshToken);
                 localStorage.setItem("userRole", data.role);
 
                 // Redirect theo role
@@ -55,5 +54,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+
+
+
 
 

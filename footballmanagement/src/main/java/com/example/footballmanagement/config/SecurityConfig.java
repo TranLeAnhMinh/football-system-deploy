@@ -9,6 +9,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import static com.example.footballmanagement.constant.Endpoint.ADMIN_ENDPOINT;
 import static com.example.footballmanagement.constant.Endpoint.AUTH_LOGIN;
@@ -27,6 +30,7 @@ import static com.example.footballmanagement.constant.Endpoint.FORGOTPASSWORD_PA
 import static com.example.footballmanagement.constant.Endpoint.LOGIN_PAGE;
 import static com.example.footballmanagement.constant.Endpoint.MAINTENANCE_WINDOW_ENDPOINT;
 import static com.example.footballmanagement.constant.Endpoint.PAYMENT_RETURN;
+import static com.example.footballmanagement.constant.Endpoint.PAYMENT_IPN;
 import static com.example.footballmanagement.constant.Endpoint.PITCH_ADMIN_ENDPOINT;
 import static com.example.footballmanagement.constant.Endpoint.PITCH_ADMIN_SYSTEM_ENDPOINT;
 import static com.example.footballmanagement.constant.Endpoint.PITCH_DETAIL_PAGE;
@@ -47,6 +51,8 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final CsrfCookieFilter csrfCookieFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -56,12 +62,43 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+                    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
+                    "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
+                    "img-src 'self' data: blob: https://res.cloudinary.com; " +
+                    "connect-src 'self' http://localhost:5005; " +
+                    "object-src 'none'; " +
+                    "base-uri 'self'; " +
+                    "frame-ancestors 'self'; " +
+                    "form-action 'self' https://sandbox.vnpayment.vn https://*.vnpayment.vn; " +
+                    "navigate-to 'self' https://sandbox.vnpayment.vn https://*.vnpayment.vn"
+                ))
+                .frameOptions(frame -> frame.sameOrigin())
+                .referrerPolicy(referrer -> referrer.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                ))
+            )
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                .ignoringRequestMatchers(
+                    AUTH_LOGIN,
+                    AUTH_REGISTER,
+                    AUTH_RECOVERY,
+                    AUTH_RECOVERY_CONFIRM,
+                    PAYMENT_RETURN,
+                    PAYMENT_IPN
+                )
+            )
             .authorizeHttpRequests(auth -> auth
                 /* ========= STATIC & PUBLIC ========= */
                 .requestMatchers(
                         AUTH_LOGIN,
                         AUTH_REGISTER,
+                        "/api/auth/csrf",
                         LOGIN_PAGE,
                         REGISTER_PAGE,
                         AUTH_REFRESH,
@@ -75,7 +112,7 @@ public class SecurityConfig {
                         MAINTENANCE_WINDOW_ENDPOINT,
                         BOOKING_SLOT_ENDPOINT,
                         PAYMENT_RETURN,
-                        "/payments/**",
+                        PAYMENT_IPN,
                         "/css/**",
                         "/js/**",
                         "/images/**",
@@ -113,6 +150,7 @@ public class SecurityConfig {
                 ).permitAll()
 
                 /* ========= API ========= */
+                .requestMatchers("/payments/**").hasRole("USER")
                 .requestMatchers("/api/payment/**").hasRole("USER")
 
                 /* ========= ADMIN SYSTEM ========= */
@@ -151,6 +189,8 @@ public class SecurityConfig {
             )
 
             /* ========= JWT Filter ========= */
+            .addFilterBefore(rateLimitFilter, CsrfFilter.class)
+            .addFilterAfter(csrfCookieFilter, CsrfFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

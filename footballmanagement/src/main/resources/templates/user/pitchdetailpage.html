@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -21,9 +21,9 @@
         </div>
 
         <div class="gallery-container">
-            <button class="gallery-nav" id="galleryPrev">←</button>
+            <button class="gallery-nav" id="galleryPrev">&larr;</button>
             <div class="gallery-images" id="galleryImages"></div>
-            <button class="gallery-nav" id="galleryNext">→</button>
+            <button class="gallery-nav" id="galleryNext">&rarr;</button>
         </div>
 
         <div class="review-section">
@@ -69,7 +69,7 @@
             </div>
         </div>
 
-        <a href="/user/home" class="back-btn" th:text="#{pitch.back}">← Back to Pitches</a>
+        <a href="/user/home" class="back-btn" th:text="#{pitch.back}">&larr; Back to Pitches</a>
     </div>
 </div>
 
@@ -97,6 +97,8 @@
     const pitchId = /*[[${pitchId}]]*/ null;
 </script>
 
+<script src="/js/auth.js"></script>
 <script src="/js/pitchdetail.js"></script>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+﻿document.addEventListener("DOMContentLoaded", () => {
   const langBtn = document.getElementById("langBtn");
   const langDropdown = document.querySelector(".lang-dropdown");
 
@@ -13,3 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+
+
+

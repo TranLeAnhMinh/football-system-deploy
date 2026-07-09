@@ -1,4 +1,4 @@
-async function loadPitchDetail() {
+﻿async function loadPitchDetail() {
     const container = document.getElementById("pitchDetailContainer");
 
     container.innerHTML = `<p>${i18n.loading}</p>`;
@@ -20,16 +20,18 @@ async function loadPitchDetail() {
             }
         }
 
+        const coverSrc = sanitizeResourceUrl(coverUrl, "/images/default-cover.jpg");
+
         container.innerHTML = `
             <div class="pitch-detail-card">
-                <img src="${coverUrl}" alt="Pitch Cover" class="pitch-detail-img">
+                <img src="${escapeHtmlAttr(coverSrc)}" alt="Pitch Cover" class="pitch-detail-img">
 
                 <div class="pitch-detail-info">
-                    <h3>${p.name}</h3>
-                    <p><strong>${i18n.location}</strong> ${p.location}</p>
-                    <p><strong>${i18n.description}</strong> ${p.description || "-"}</p>
-                    <p><strong>${i18n.branch}</strong> ${p.branchName}</p>
-                    <p><strong>${i18n.type}</strong> ${p.pitchTypeName}</p>
+                    <h3>${escapeHtml(p.name)}</h3>
+                    <p><strong>${escapeHtml(i18n.location)}</strong> ${escapeHtml(p.location)}</p>
+                    <p><strong>${escapeHtml(i18n.description)}</strong> ${escapeHtml(p.description || "-")}</p>
+                    <p><strong>${escapeHtml(i18n.branch)}</strong> ${escapeHtml(p.branchName)}</p>
+                    <p><strong>${escapeHtml(i18n.type)}</strong> ${escapeHtml(p.pitchTypeName)}</p>
                     <p><strong>${i18n.status}</strong> ${p.active ? i18n.active : i18n.inactive}</p>
                     <a href="#" id="bookingBtn" class="booking-btn">${i18n.booking}</a>
                 </div>
@@ -44,7 +46,7 @@ async function loadPitchDetail() {
 
             gallery.forEach(img => {
                 const el = document.createElement("img");
-                el.src = img.url;
+                el.src = sanitizeResourceUrl(img.url, "/images/default-cover.jpg");
                 galleryContainer.appendChild(el);
             });
 
@@ -78,7 +80,7 @@ async function loadAverageRating() {
     const avg = await avgRes.json();
 
     const stars = Array.from({ length: 5 }, (_, i) => {
-        return `<span class="star ${i < Math.round(avg) ? "filled" : ""}">★</span>`;
+        return `<span class="star ${i < Math.round(avg) ? "filled" : ""}">&#9733;</span>`;
     }).join("");
 
     document.getElementById("avgRating").innerHTML = `${avg} ${stars}`;
@@ -101,15 +103,25 @@ async function loadReviews() {
         const card = document.createElement("div");
         card.classList.add("review-card");
 
-        const stars = Array.from({ length: 5 }, (_, i) => {
-            return `<span class="star ${i < r.rating ? "filled" : ""}">★</span>`;
-        }).join("");
+        const userName = document.createElement("strong");
+        userName.textContent = r.userFullName || "";
 
-        card.innerHTML = `
-            <strong>${r.userFullName}</strong>
-            <div class="review-stars">${stars}</div>
-            <p>${r.content || ""}</p>
-        `;
+        const stars = document.createElement("div");
+        stars.className = "review-stars";
+        for (let i = 0; i < 5; i++) {
+            const star = document.createElement("span");
+            star.classList.add("star");
+            if (i < Number(r.rating || 0)) {
+                star.classList.add("filled");
+            }
+            star.textContent = "\u2605";
+            stars.appendChild(star);
+        }
+
+        const content = document.createElement("p");
+        content.textContent = r.content || "";
+
+        card.append(userName, stars, content);
 
         reviewContainer.appendChild(card);
     });
@@ -129,7 +141,7 @@ function renderRatingStars(current = 5) {
         if (i <= current) {
             star.classList.add("filled");
         }
-        star.textContent = "★";
+        star.textContent = "\u2605";
 
         star.addEventListener("mouseenter", () => {
             paintRatingStars(i);
@@ -165,15 +177,22 @@ async function setupReviewForm() {
     const ratingValue = document.getElementById("ratingValue");
     const reviewContent = document.getElementById("reviewContent");
 
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
+    let currentUser;
+    try {
+        const meRes = await fetch("/api/user/me");
+        if (!meRes.ok) {
+            reviewForm.style.display = "none";
+            reviewAuthMessage.innerHTML = `<a href="/login">${i18n.reviewLoginRequired}</a>`;
+            return;
+        }
+        currentUser = await meRes.json();
+    } catch (err) {
         reviewForm.style.display = "none";
         reviewAuthMessage.innerHTML = `<a href="/login">${i18n.reviewLoginRequired}</a>`;
         return;
     }
 
-    const payload = decodeJwt(token);
-    if (!payload || payload.role !== "USER") {
+    if (!currentUser || currentUser.role !== "USER") {
         reviewForm.style.display = "none";
         reviewAuthMessage.textContent = i18n.reviewUserOnly;
         return;
@@ -189,9 +208,7 @@ async function setupReviewForm() {
         const reviewsRes = await fetch(`/api/pitches/${pitchId}/reviews`);
         if (reviewsRes.ok) {
             const reviews = await reviewsRes.json();
-            const currentUserId = payload.userId || payload.id || payload.sub;
-
-            const myReview = reviews.find(r => r.userId === currentUserId);
+            const myReview = reviews.find(r => r.userId === currentUser.id);
             if (myReview) {
                 ratingValue.value = myReview.rating;
                 reviewContent.value = myReview.content || "";
@@ -211,14 +228,8 @@ async function setupReviewForm() {
         try {
             const res = await fetch(`/api/pitches/${pitchId}/reviews`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    rating,
-                    content
-                })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rating, content })
             });
 
             if (!res.ok) {
@@ -236,34 +247,46 @@ async function setupReviewForm() {
     }, { once: true });
 }
 
-function decodeJwt(token) {
-    try {
-        return JSON.parse(atob(token.split(".")[1]));
-    } catch {
-        return null;
-    }
-}
-
 document.addEventListener("click", async (e) => {
     const btn = e.target.closest("#bookingBtn");
     if (!btn) return;
 
     e.preventDefault();
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-        alert("Bạn cần đăng nhập để đặt lịch");
+    const meRes = await fetch("/api/user/me");
+    if (!meRes.ok) {
+        alert("Ban can dang nhap de dat lich");
         window.location.href = "/login";
         return;
     }
 
-    const payload = decodeJwt(token);
-    if (!payload || payload.role !== "USER") {
-        alert("Bạn cần đăng nhập để đặt lịch");
-        window.location.href = "/login";
+    const currentUser = await meRes.json();
+    if (!currentUser || currentUser.role !== "USER") {
+        alert("Ban can dang nhap de dat lich");
         return;
     }
 
     window.location.href = `/user/booking/${pitchId}`;
 });
-
 document.addEventListener("DOMContentLoaded", loadPitchDetail);
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value) {
+    return escapeHtml(value);
+}
+
+function sanitizeResourceUrl(value, fallback) {
+    const url = String(value || "").trim();
+    if (/^(https?:\/\/|\/)/i.test(url)) {
+        return url;
+    }
+    return fallback;
+}
+

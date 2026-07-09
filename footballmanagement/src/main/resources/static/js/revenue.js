@@ -18,9 +18,6 @@ function formatCurrency(num) {
 
 // =================== DAILY REVENUE ===================
 async function loadDailyRevenue() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return showAlert("Vui lòng đăng nhập lại");
-
   const dateInput = document.getElementById("rev-date");
   const dateValue = dateInput.value;
   const today = new Date();
@@ -52,7 +49,6 @@ async function loadDailyRevenue() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
       },
       body: JSON.stringify(body),
     });
@@ -78,9 +74,6 @@ async function loadDailyRevenue() {
 
 // =================== MONTHLY REVENUE ===================
 async function loadMonthlyRevenue() {
-  const token = localStorage.getItem("accessToken");
-  if (!token) return showAlert("Vui lòng đăng nhập lại");
-
   const year = document.getElementById("rev-year").value;
   const body = year ? { year: parseInt(year, 10) } : {};
 
@@ -89,7 +82,6 @@ async function loadMonthlyRevenue() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
       },
       body: JSON.stringify(body),
     });
@@ -185,3 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDailyRevenue();
   loadMonthlyRevenue();
 });
+
+
+
+

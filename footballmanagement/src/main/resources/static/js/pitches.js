@@ -21,13 +21,13 @@ async function loadBranches(pitchTypeId) {
             html += `
                 <div class="branch-section">
                     <div class="branch-header" onclick="toggleBranch(${index})">
-                        <h3>${i18n.pitchBranch} ${branch.name}</h3>
+                        <h3>${escapeHtml(i18n.pitchBranch)} ${escapeHtml(branch.name)}</h3>
                         <button class="toggle-btn" id="toggle-${index}">${i18n.collapse}</button>
                     </div>
                     <div class="branch-pitches" id="branch-pitches-${index}">
                         ${branch.pitches.map(p => `
-                            <div class="pitch-item" onclick="goToPitchDetail('${p.id}')">
-                                ${p.name}
+                            <div class="pitch-item" onclick="goToPitchDetail('${escapeHtmlAttr(p.id)}')">
+                                ${escapeHtml(p.name)}
                             </div>
                         `).join("")}
                     </div>
@@ -59,5 +59,20 @@ function toggleBranch(index) {
 
 // ✅ thêm hàm redirect sang trang chi tiết sân
 function goToPitchDetail(pitchId) {
-    window.location.href = `/user/pitch/${pitchId}`;
+    window.location.href = `/user/pitch/${encodeURIComponent(pitchId)}`;
 }
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttr(value) {
+    return escapeHtml(value);
+}
+
+

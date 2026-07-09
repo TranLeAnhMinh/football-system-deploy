@@ -1,15 +1,8 @@
 // Lấy thông tin user khi load trang
 async function loadUserInfo() {
-    const token = localStorage.getItem("accessToken"); 
-    if (!token) {
-        alert("Bạn chưa đăng nhập");
-        window.location.href = "/login";
-        return;
-    }
-    try {
+try {
         const res = await fetch("/api/user/me", {
             headers: {
-                "Authorization": "Bearer " + token 
             }
         });
 
@@ -35,14 +28,11 @@ async function updateUser(event) {
 
     const fullName = document.getElementById("fullName").value;
     const phone = document.getElementById("phone").value;
-    const token = localStorage.getItem("accessToken"); 
-
-    try {
+try {
         const res = await fetch("/api/user/me", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer " + token 
             },
             body: JSON.stringify({ fullname: fullName, phone: phone })
         });
@@ -58,3 +48,7 @@ async function updateUser(event) {
         alert("Error: " + err.message);
     }
 }
+
+
+
+

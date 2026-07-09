@@ -3,11 +3,13 @@ package com.example.footballmanagement.controller.mvc.user;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.footballmanagement.config.JwtUserDetails;
 import com.example.footballmanagement.service.PaymentService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,10 +28,11 @@ public class PaymentPageController {
     @PostMapping("/{bookingId}")
     public ResponseEntity<Void> createPayment(
             @PathVariable UUID bookingId,
+            @AuthenticationPrincipal JwtUserDetails userDetails,
             HttpServletRequest request) throws Exception {
 
         // Gọi service tạo payment URL
-        String url = paymentService.createPaymentUrl(bookingId, request);
+        String url = paymentService.createPaymentUrl(bookingId, userDetails.getId(), request);
 
         // Trả về redirect sang VNPAY
         return ResponseEntity.status(302)

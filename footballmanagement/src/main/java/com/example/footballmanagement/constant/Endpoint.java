@@ -69,6 +69,7 @@ public class Endpoint {
     // ================= PAYMENT =================
     public static final String PAYMENT_ENDPOINT = "/api/payment/**";
     public static final String PAYMENT_RETURN   = "/api/payment/vnpay-return";
+    public static final String PAYMENT_IPN      = "/api/payment/vnpay-ipn";
 
     // ================= REVENUE =================
     public static final String REVENUE_BRANCH_ENDPOINT = "/api/revenue/branch/**";  // API cho admin chi nhánh xem doanh thu
