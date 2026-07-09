@@ -127,12 +127,42 @@ let refreshInterval = null;
     }
   });
 });
+
+    if (pendingBooking) {
+      previewSlots(pendingBooking.date, pendingBooking.slots);
+    }
   }
 
   // Format giờ HH:mm
   function formatTime(isoStr) {
     const d = new Date(isoStr);
     return d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
+  }
+
+  function timeToMinutes(time) {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  }
+
+  function findOverlappingSlot(slots) {
+    const sortedSlots = slots
+      .map(slot => ({
+        ...slot,
+        startMinutes: timeToMinutes(slot.startTime),
+        endMinutes: timeToMinutes(slot.endTime)
+      }))
+      .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
+
+    for (let i = 1; i < sortedSlots.length; i++) {
+      if (sortedSlots[i].startMinutes < sortedSlots[i - 1].endMinutes) {
+        return {
+          previous: sortedSlots[i - 1],
+          current: sortedSlots[i]
+        };
+      }
+    }
+
+    return null;
   }
 
   // Init calendar
@@ -314,28 +344,47 @@ refreshInterval = setInterval(async () => {
       const note = document.getElementById("bookingNote").value || ""; // 👈 lấy note
 
       const slots = [];
+      let validationError = null;
+
       document.querySelectorAll("#slotContainer .slot-row").forEach(row => {
+        if (validationError) return;
+
         const start = row.querySelector(".startTime").value;
         const end = row.querySelector(".endTime").value;
         if (!start || !end) return;
 
-        const startDate = new Date(`${date}T${start}:00`);
-        const endDate = new Date(`${date}T${end}:00`);
-        const diffMinutes = (endDate - startDate) / (1000 * 60);
+        const startMinutes = timeToMinutes(start);
+        const endMinutes = timeToMinutes(end);
+        const diffMinutes = endMinutes - startMinutes;
 
-        if (endDate <= startDate) {
-          alert("Giờ kết thúc phải sau giờ bắt đầu!");
+        if (endMinutes <= startMinutes) {
+          validationError = "Giờ kết thúc phải sau giờ bắt đầu!";
           return;
         }
         if (diffMinutes % 45 !== 0) {
-          alert("Thời gian đặt sân phải là bội số của 45 phút (45, 90, 135...)");
+          validationError = "Thời gian đặt sân phải là bội số của 45 phút (45, 90, 135...)";
           return;
         }
         slots.push({ startTime: start, endTime: end });
       });
 
+      if (validationError) {
+        alert(validationError);
+        return;
+      }
+
       if (!date || slots.length === 0) {
         alert(window.i18n.inputRequired);
+        return;
+      }
+
+      const overlappingSlot = findOverlappingSlot(slots);
+      if (overlappingSlot) {
+        alert(
+          `Các slot không được trùng hoặc chồng lấn nhau: ` +
+          `${overlappingSlot.previous.startTime} - ${overlappingSlot.previous.endTime} ` +
+          `và ${overlappingSlot.current.startTime} - ${overlappingSlot.current.endTime}`
+        );
         return;
       }
 

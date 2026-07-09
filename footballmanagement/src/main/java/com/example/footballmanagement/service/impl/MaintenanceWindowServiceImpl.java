@@ -81,7 +81,7 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
     @Override
     @Transactional
     public MaintenanceWindowResponse createMaintenanceWindow(UUID adminId, MaintenanceWindowRequest req) {
-        log.info("🔥 [MAIN THREAD] Processing maintenance on thread: {}", Thread.currentThread().getName());
+        log.info("[MAIN THREAD] Processing maintenance on thread: {}", Thread.currentThread().getName());
 
         User currentUser = userRepo.findById(adminId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
@@ -96,7 +96,7 @@ public class MaintenanceWindowServiceImpl implements MaintenanceWindowService {
             throw new ApiException(ErrorCode.USER_INACTIVE);
         }
 
-        // 🔒 Lock pitch trong suốt transaction để tránh race condition
+        //  Lock pitch trong suốt transaction để tránh race condition
 Pitch pitch = pitchRepo.findByIdForUpdate(req.getPitchId())
         .orElseThrow(() -> new ApiException(ErrorCode.PITCH_NOT_FOUND));
 

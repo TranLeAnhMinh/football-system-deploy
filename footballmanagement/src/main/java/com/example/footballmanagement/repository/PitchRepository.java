@@ -54,7 +54,7 @@ public interface PitchRepository extends JpaRepository<Pitch, UUID> {
     Pitch findWithDetailById(UUID id);
 
 
-    // 🔒 Lock sân khi tạo booking hoặc tạo lịch bảo trì để tránh race condition
+    //  Lock sân khi tạo booking hoặc tạo lịch bảo trì để tránh race condition
 @Lock(LockModeType.PESSIMISTIC_WRITE)
 @Query("SELECT p FROM Pitch p WHERE p.id = :id")
 Optional<Pitch> findByIdForUpdate(@Param("id") UUID id);
