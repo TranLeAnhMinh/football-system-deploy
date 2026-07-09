@@ -19,6 +19,7 @@ import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.Payment;
 import com.example.footballmanagement.entity.enums.BookingStatus;
 import com.example.footballmanagement.entity.enums.PaymentStatus;
+import com.example.footballmanagement.repository.BookingRepository;
 import com.example.footballmanagement.repository.PaymentRepository;
 import com.example.footballmanagement.service.AdminSystemPaymentService;
 
@@ -38,6 +39,7 @@ public class AdminSystemPaymentServiceImpl implements AdminSystemPaymentService 
     );
 
     private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -68,6 +70,37 @@ public class AdminSystemPaymentServiceImpl implements AdminSystemPaymentService 
                 .collect(Collectors.toList());
 
         return new PageImpl<>(content, pageable, idPage.getTotalElements());
+    }
+
+    @Override
+    @Transactional
+    public PaymentAnomalyResponse reconcilePayment(UUID paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        Booking booking = payment.getBooking();
+        if (booking == null) {
+            throw new IllegalStateException("Payment does not have a booking");
+        }
+        if (payment.getAmount() == null
+                || booking.getFinalPrice() == null
+                || payment.getAmount().compareTo(booking.getFinalPrice()) != 0) {
+            throw new IllegalStateException("Cannot reconcile payment with mismatched amount");
+        }
+
+        boolean vnpaySuccess = "00".equals(payment.getResponseCode())
+                && "00".equals(payment.getTransactionStatus());
+        if (payment.getStatus() != PaymentStatus.PAID && !vnpaySuccess) {
+            throw new IllegalStateException("Payment is not confirmed as paid");
+        }
+
+        payment.setStatus(PaymentStatus.PAID);
+        if (!PAID_BOOKING_STATUSES.contains(booking.getStatus())) {
+            booking.setStatus(BookingStatus.APPROVED);
+        }
+
+        bookingRepository.save(booking);
+        Payment saved = paymentRepository.save(payment);
+        return toResponse(saved);
     }
 
     private PaymentAnomalyResponse toResponse(Payment payment) {

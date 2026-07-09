@@ -35,6 +35,21 @@
       </div>
     </div>
 
+    <div class="payment-summary-grid">
+      <div class="payment-summary-card">
+        <span th:text="#{payment.anomaly.total}">Total anomalies</span>
+        <strong id="summaryTotal">0</strong>
+      </div>
+      <div class="payment-summary-card">
+        <span th:text="#{payment.anomaly.autoFixable}">Auto-fixable on this page</span>
+        <strong id="summaryFixable">0</strong>
+      </div>
+      <div class="payment-summary-card">
+        <span th:text="#{payment.anomaly.manualOnly}">Manual review on this page</span>
+        <strong id="summaryManual">0</strong>
+      </div>
+    </div>
+
     <section class="payment-panel">
       <table class="payment-table">
         <thead>
@@ -49,6 +64,7 @@
           <th th:text="#{payment.anomaly.bookingStatus}">Booking</th>
           <th th:text="#{payment.anomaly.txnRef}">Txn Ref</th>
           <th th:text="#{booking.table.detail}">Detail</th>
+          <th th:text="#{action.title}">Action</th>
         </tr>
         </thead>
         <tbody id="paymentAnomalyList"></tbody>
@@ -87,6 +103,10 @@
   const i18n = {
     noData: /*[[#{payment.anomaly.noData}]]*/ "No anomalies",
     view: /*[[#{booking.table.view}]]*/ "View",
+    reconcile: /*[[#{payment.anomaly.reconcile}]]*/ "Reconcile",
+    reconcileConfirm: /*[[#{payment.anomaly.reconcileConfirm}]]*/ "Reconcile this payment and approve its booking?",
+    reconcileDone: /*[[#{payment.anomaly.reconcileDone}]]*/ "Reconciled successfully",
+    manualOnly: /*[[#{payment.anomaly.manualOnly}]]*/ "Manual review",
     pagination: /*[[#{pagination.range}]]*/ "{0}-{1} / {2}",
     loadFail: /*[[#{error.loadFail}]]*/ "Failed to load data"
   };

@@ -45,6 +45,35 @@
   background: #fff;
 }
 
+.payment-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.payment-summary-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.payment-summary-card span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.payment-summary-card strong {
+  color: #111827;
+  font-size: 26px;
+  font-weight: 800;
+}
+
 .refresh-btn {
   border: none;
   border-radius: 10px;
@@ -162,6 +191,27 @@
   background: linear-gradient(90deg, #3b82f6, #2563eb);
   color: #fff;
   box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+}
+
+.btn-reconcile {
+  background: #16a34a;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22,163,74,0.22);
+}
+
+.btn-reconcile:hover {
+  background: #15803d;
+}
+
+.manual-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .pagination-box {
@@ -282,6 +332,10 @@
 }
 
 @media(max-width: 900px) {
+  .payment-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
   .payment-detail-grid {
     grid-template-columns: 1fr;
   }

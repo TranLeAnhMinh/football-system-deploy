@@ -1,11 +1,15 @@
 package com.example.footballmanagement.controller.api;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,5 +33,14 @@ public class AdminSystemPaymentController {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(paymentService.getPaymentAnomalies(pageable));
+    }
+
+    @PostMapping("/{paymentId}/reconcile")
+    public ResponseEntity<?> reconcile(@PathVariable UUID paymentId) {
+        try {
+            return ResponseEntity.ok(paymentService.reconcilePayment(paymentId));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 }

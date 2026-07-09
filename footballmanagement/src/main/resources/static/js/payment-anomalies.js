@@ -18,6 +18,7 @@ async function loadPaymentAnomalies(page = 0) {
     totalElements = data.totalElements ?? currentRows.length;
 
     renderRows(currentRows);
+    renderCards(currentRows);
     renderSummary();
     renderPagination(totalPages, currentPage);
   } catch (err) {
@@ -30,7 +31,7 @@ function renderRows(rows) {
   tbody.innerHTML = "";
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="10">${i18n.noData}</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="11">${i18n.noData}</td></tr>`;
     return;
   }
 
@@ -53,13 +54,54 @@ function renderRows(rows) {
       <td><span class="status-tag ${statusClass(row.bookingStatus)}">${row.bookingStatus || "-"}</span></td>
       <td class="mono">${escapeHtml(row.txnRef || "-")}</td>
       <td><button class="btn-small btn-approve" onclick="showPaymentDetail('${row.paymentId}')">${i18n.view}</button></td>
+      <td>${renderAction(row)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+function renderCards(rows) {
+  const fixable = rows.filter(isAutoFixable).length;
+  document.getElementById("summaryTotal").textContent = totalElements;
+  document.getElementById("summaryFixable").textContent = fixable;
+  document.getElementById("summaryManual").textContent = rows.length - fixable;
+}
+
 function renderReasons(reasons = []) {
   return reasons.map(reason => `<span class="reason-pill">${escapeHtml(reason)}</span>`).join("");
+}
+
+function renderAction(row) {
+  if (isAutoFixable(row)) {
+    return `<button class="btn-small btn-reconcile" onclick="reconcilePayment('${row.paymentId}')">${i18n.reconcile}</button>`;
+  }
+  return `<span class="manual-chip">${i18n.manualOnly}</span>`;
+}
+
+function isAutoFixable(row) {
+  const paymentSuccess = row.paymentStatus === "PAID" || (row.responseCode === "00" && row.transactionStatus === "00");
+  const bookingNeedsApprove = !["APPROVED", "CHECKED_IN", "NO_SHOW", "WAITING_REFUND", "REFUNDED"].includes(row.bookingStatus);
+  const amountMatches = Number(row.paymentAmount || 0) === Number(row.bookingFinalPrice || 0);
+  return paymentSuccess && bookingNeedsApprove && amountMatches;
+}
+
+async function reconcilePayment(paymentId) {
+  if (!confirm(i18n.reconcileConfirm)) return;
+
+  try {
+    const res = await fetch(`/api/adminsystem/payments/${paymentId}/reconcile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || i18n.loadFail);
+    }
+    alert(i18n.reconcileDone);
+    loadPaymentAnomalies(currentPage);
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 function showPaymentDetail(paymentId) {
@@ -150,3 +192,4 @@ window.loadPaymentAnomalies = loadPaymentAnomalies;
 window.changePageSize = changePageSize;
 window.showPaymentDetail = showPaymentDetail;
 window.closePaymentModal = closePaymentModal;
+window.reconcilePayment = reconcilePayment;
