@@ -29,6 +29,7 @@ public class BranchBookingResponse {
     // Trạng thái và giá
     private String status;
     private BigDecimal finalPrice;
+    private PaymentInfoResponse payment;
 
     // Ghi chú
     private String note;

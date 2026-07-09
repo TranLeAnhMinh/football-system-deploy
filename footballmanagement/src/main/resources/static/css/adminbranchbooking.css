@@ -377,3 +377,20 @@ body {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+.payment-detail-box {
+  margin-top: 22px;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+}
+
+.payment-detail-box h4 {
+  font-size: 16px;
+  font-weight: 700;
+  border-left: 4px solid #2563eb;
+  padding-left: 8px;
+  margin: 0 0 10px 0;
+  color: #1e293b;
+}

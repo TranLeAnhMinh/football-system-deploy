@@ -160,6 +160,7 @@ public class SecurityConfig {
                 .requestMatchers(PITCH_ADMIN_SYSTEM_ENDPOINT).hasRole("ADMIN_SYSTEM")
                 .requestMatchers(BRANCH_ADMIN_SYSTEM_ENDPOINT).hasRole("ADMIN_SYSTEM")
                 .requestMatchers("/api/adminsystem/images/**").hasRole("ADMIN_SYSTEM")
+                .requestMatchers("/api/adminsystem/payments/**").hasRole("ADMIN_SYSTEM")
                 .requestMatchers(VOUCHER_ADMIN_SYSTEM_ENDPOINT).hasRole("ADMIN_SYSTEM")
                 .requestMatchers(REVENUE_ADMIN_SYSTEM_ENDPOINT).hasRole("ADMIN_SYSTEM")
                 .requestMatchers(USER_ADMIN_SYSTEM_ENDPOINT).hasRole("ADMIN_SYSTEM") 

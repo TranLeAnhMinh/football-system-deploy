@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="#{payment.anomaly.title}">Payment Anomalies</title>
+  <link rel="stylesheet" th:href="@{/css/home.css}">
+  <link rel="stylesheet" th:href="@{/css/payment-anomalies.css}">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body onload="loadPaymentAnomalies(0)">
+<div class="home-container">
+  <div th:replace="layouts/adminsystemsidebar :: adminSystemSidebar"></div>
+
+  <div class="main-content">
+    <h2 th:text="#{payment.anomaly.title}">Payment Anomalies</h2>
+
+    <div class="payment-toolbar">
+      <div class="payment-toolbar-left">
+        <label for="pageSize" th:text="#{booking.history.show}">Show</label>
+        <select id="pageSize" onchange="changePageSize(this.value)">
+          <option value="10" selected>10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        <span th:text="#{booking.history.itemsPerPage}">items / page</span>
+      </div>
+
+      <div class="payment-toolbar-right">
+        <button class="refresh-btn" onclick="loadPaymentAnomalies(currentPage)">
+          <i class="fa fa-rotate-right"></i>
+          <span th:text="#{payment.anomaly.refresh}">Refresh</span>
+        </button>
+        <span id="summaryText"></span>
+      </div>
+    </div>
+
+    <section class="payment-panel">
+      <table class="payment-table">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th th:text="#{payment.anomaly.reason}">Reason</th>
+          <th th:text="#{payment.anomaly.user}">User</th>
+          <th th:text="#{booking.table.branch}">Branch</th>
+          <th th:text="#{booking.table.pitch}">Pitch</th>
+          <th th:text="#{payment.anomaly.amount}">Amount</th>
+          <th th:text="#{payment.anomaly.paymentStatus}">Payment</th>
+          <th th:text="#{payment.anomaly.bookingStatus}">Booking</th>
+          <th th:text="#{payment.anomaly.txnRef}">Txn Ref</th>
+          <th th:text="#{booking.table.detail}">Detail</th>
+        </tr>
+        </thead>
+        <tbody id="paymentAnomalyList"></tbody>
+      </table>
+    </section>
+
+    <div class="pagination-box" id="pagination"></div>
+  </div>
+</div>
+
+<div id="paymentModal" class="modal-overlay">
+  <div class="modal-box payment-modal-box">
+    <div class="modal-title-row">
+      <h4 th:text="#{payment.anomaly.detailTitle}">Payment Detail</h4>
+      <button class="modal-close-icon" onclick="closePaymentModal()">&times;</button>
+    </div>
+    <div class="payment-detail-grid">
+      <div><strong>Payment ID</strong><span id="modalPaymentId"></span></div>
+      <div><strong>Booking ID</strong><span id="modalBookingId"></span></div>
+      <div><strong>TxnRef</strong><span id="modalTxnRef"></span></div>
+      <div><strong>VNPay No</strong><span id="modalVnpNo"></span></div>
+      <div><strong>Bank</strong><span id="modalBank"></span></div>
+      <div><strong>Pay date</strong><span id="modalPayDate"></span></div>
+      <div><strong>Response</strong><span id="modalResponse"></span></div>
+      <div><strong>Transaction</strong><span id="modalTransaction"></span></div>
+      <div><strong>Created</strong><span id="modalCreated"></span></div>
+      <div><strong>User</strong><span id="modalUser"></span></div>
+    </div>
+    <div class="modal-action">
+      <button class="btn-cancel" onclick="closePaymentModal()" th:text="#{booking.close}">Close</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  const i18n = {
+    noData: /*[[#{payment.anomaly.noData}]]*/ "No anomalies",
+    view: /*[[#{booking.table.view}]]*/ "View",
+    pagination: /*[[#{pagination.range}]]*/ "{0}-{1} / {2}",
+    loadFail: /*[[#{error.loadFail}]]*/ "Failed to load data"
+  };
+</script>
+<script th:src="@{/js/auth.js}"></script>
+<script th:src="@{/js/payment-anomalies.js}"></script>
+</body>
+</html>

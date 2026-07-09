@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -19,9 +21,11 @@ import com.example.footballmanagement.dto.response.BranchBookingResponse;
 import com.example.footballmanagement.dto.response.UpdateBookingStatusResponse;
 import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.Branch;
+import com.example.footballmanagement.entity.Payment;
 import com.example.footballmanagement.entity.enums.BookingStatus;
 import com.example.footballmanagement.repository.BookingRepository;
 import com.example.footballmanagement.repository.BranchRepository;
+import com.example.footballmanagement.repository.PaymentRepository;
 import com.example.footballmanagement.service.BranchBookingService;
 import com.example.footballmanagement.service.EmailTemplateService;
 import com.example.footballmanagement.utils.ConverterUtil;
@@ -37,6 +41,7 @@ public class BranchBookingServiceImpl implements BranchBookingService {
     private final BookingRepository bookingRepo;
     private final BranchRepository branchRepo;
     private final EmailTemplateService emailTemplateService;
+    private final PaymentRepository paymentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -84,8 +89,13 @@ public class BranchBookingServiceImpl implements BranchBookingService {
 
         bookings.sort(Comparator.comparingInt(b -> orderMap.getOrDefault(b.getId(), Integer.MAX_VALUE)));
 
+        Map<UUID, Payment> paymentByBookingId = preferredPayments(bookings);
+
         List<BranchBookingResponse> content = bookings.stream()
-                .map(ConverterUtil::toBranchBookingResponse)
+                .map(booking -> ConverterUtil.toBranchBookingResponse(
+                        booking,
+                        paymentByBookingId.get(booking.getId())
+                ))
                 .toList();
 
         return new PageImpl<>(content, pageable, bookingIdPage.getTotalElements());
@@ -137,5 +147,25 @@ public class BranchBookingServiceImpl implements BranchBookingService {
                 .adminNote(request.getAdminNote())
                 .message("Booking status updated and notification sent successfully.")
                 .build();
+    }
+
+    private Map<UUID, Payment> preferredPayments(List<Booking> bookings) {
+        if (bookings.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
+        return paymentRepository.findByBooking_IdInOrderByCreatedAtDesc(bookingIds).stream()
+                .collect(Collectors.toMap(
+                        payment -> payment.getBooking().getId(),
+                        Function.identity(),
+                        this::choosePreferredPayment
+                ));
+    }
+
+    private Payment choosePreferredPayment(Payment existing, Payment candidate) {
+        if (candidate.getStatus().name().equals("PAID") && !existing.getStatus().name().equals("PAID")) {
+            return candidate;
+        }
+        return existing.getCreatedAt().isAfter(candidate.getCreatedAt()) ? existing : candidate;
     }
 }

@@ -172,6 +172,11 @@ function viewBooking(bookingId) {
   document.getElementById("modalDate").innerText = formatDate(booking.startAt) || "-";
   document.getElementById("modalStatus").innerText = localizedStatus;
   document.getElementById("modalNote").innerText = booking.note || "-";
+  document.getElementById("modalPaymentStatus").innerText = mapPaymentStatus(booking.payment?.status);
+  document.getElementById("modalTxnRef").innerText = booking.payment?.txnRef || "-";
+  document.getElementById("modalVnpNo").innerText = booking.payment?.vnpTransactionNo || "-";
+  document.getElementById("modalBankCode").innerText = booking.payment?.bankCode || "-";
+  document.getElementById("modalPayDate").innerText = formatVnpPayDate(booking.payment?.payDate);
 
   document.getElementById("bookingModal").style.display = "flex";
 }
@@ -228,6 +233,16 @@ function formatDate(dateStr) {
   const d = new Date(dateStr);
   const locale = document.documentElement.lang || "vi-VN";
   return d.toLocaleString(locale, { timeZone: "Asia/Ho_Chi_Minh" });
+}
+
+function formatVnpPayDate(value) {
+  if (!value || value.length !== 14) return value || "-";
+  return `${value.slice(6, 8)}/${value.slice(4, 6)}/${value.slice(0, 4)} ${value.slice(8, 10)}:${value.slice(10, 12)}:${value.slice(12, 14)}`;
+}
+
+function mapPaymentStatus(status) {
+  if (!status) return "-";
+  return i18n.paymentStatus?.[status] || status;
 }
 
 // =================== Reset bộ lọc ===================

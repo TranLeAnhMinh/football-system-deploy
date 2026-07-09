@@ -11,6 +11,7 @@ import com.example.footballmanagement.dto.response.BookingSlotResponse;
 import com.example.footballmanagement.dto.response.BranchBookingResponse;
 import com.example.footballmanagement.dto.response.MaintenanceWindowFilterResponse;
 import com.example.footballmanagement.dto.response.MaintenanceWindowResponse;
+import com.example.footballmanagement.dto.response.PaymentInfoResponse;
 import com.example.footballmanagement.dto.response.PitchDetailResponse;
 import com.example.footballmanagement.dto.response.PitchImageResponse;
 import com.example.footballmanagement.dto.response.PitchResponseDto;
@@ -23,6 +24,7 @@ import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.BookingSlot;
 import com.example.footballmanagement.entity.Branch;
 import com.example.footballmanagement.entity.MaintenanceWindow;
+import com.example.footballmanagement.entity.Payment;
 import com.example.footballmanagement.entity.Pitch;
 import com.example.footballmanagement.entity.PitchImage;
 import com.example.footballmanagement.entity.Review;
@@ -152,6 +154,10 @@ public class ConverterUtil {
 
     // ========== Booking History ==========
     public static BookingHistoryResponse toBookingHistoryResponse(Booking booking) {
+        return toBookingHistoryResponse(booking, null);
+    }
+
+    public static BookingHistoryResponse toBookingHistoryResponse(Booking booking, Payment payment) {
         return BookingHistoryResponse.builder()
                 .bookingId(booking.getId())
                 .pitchName(booking.getPitch().getName())
@@ -159,9 +165,30 @@ public class ConverterUtil {
                 .status(booking.getStatus())
                 .createdAt(booking.getCreatedAt())
                 .finalPrice(booking.getFinalPrice())
+                .payment(toPaymentInfoResponse(payment))
                 .slots(booking.getSlots().stream()
                         .map(ConverterUtil::toSlotResponse)
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    public static PaymentInfoResponse toPaymentInfoResponse(Payment payment) {
+        if (payment == null) {
+            return null;
+        }
+        return PaymentInfoResponse.builder()
+                .paymentId(payment.getId())
+                .amount(payment.getAmount())
+                .method(payment.getMethod())
+                .type(payment.getType())
+                .status(payment.getStatus())
+                .txnRef(payment.getTxnRef())
+                .vnpTransactionNo(payment.getVnpTransactionNo())
+                .bankCode(payment.getBankCode())
+                .responseCode(payment.getResponseCode())
+                .transactionStatus(payment.getTransactionStatus())
+                .payDate(payment.getPayDate())
+                .createdAt(payment.getCreatedAt())
                 .build();
     }
 
@@ -197,6 +224,10 @@ public class ConverterUtil {
                 .build();
     }
     public static BranchBookingResponse toBranchBookingResponse(Booking booking) {
+        return toBranchBookingResponse(booking, null);
+    }
+
+    public static BranchBookingResponse toBranchBookingResponse(Booking booking, Payment payment) {
     var dto = new BranchBookingResponse();
     dto.setBookingId(booking.getId());
     dto.setUserId(booking.getUser().getId());
@@ -209,6 +240,7 @@ public class ConverterUtil {
     dto.setPitchLocation(booking.getPitch().getLocation());
     dto.setStatus(booking.getStatus().name());
     dto.setFinalPrice(booking.getFinalPrice());
+    dto.setPayment(toPaymentInfoResponse(payment));
     dto.setNote(booking.getNote());
     dto.setCreatedAt(booking.getCreatedAt());
 

@@ -134,6 +134,15 @@
       <p><strong th:text="#{booking.summary.status}">Trạng thái:</strong> <span id="modalStatus"></span></p>
       <p><strong th:text="#{booking.summary.note}">Ghi chú:</strong> <span id="modalNote"></span></p>
 
+      <div class="payment-detail-box">
+        <h4 th:text="#{payment.detail.title}">Payment Detail</h4>
+        <p><strong th:text="#{payment.status}">Payment:</strong> <span id="modalPaymentStatus"></span></p>
+        <p><strong th:text="#{payment.txnRef}">Txn Ref:</strong> <span id="modalTxnRef"></span></p>
+        <p><strong th:text="#{payment.vnpTransactionNo}">VNPay No:</strong> <span id="modalVnpNo"></span></p>
+        <p><strong th:text="#{payment.bankCode}">Bank:</strong> <span id="modalBankCode"></span></p>
+        <p><strong th:text="#{payment.payDate}">Pay Date:</strong> <span id="modalPayDate"></span></p>
+      </div>
+
       <div id="modalSlotsSection">
         <h4 th:text="#{booking.summary.slots}">Các khung giờ đã đặt</h4>
         <ul id="modalSlotsList"></ul>
@@ -156,6 +165,12 @@
       WAITING_REFUND: /*[[#{status.waiting_refund}]]*/ 'Waiting Refund',
       REFUNDED: /*[[#{status.refunded}]]*/ 'Refunded',
       CANCELLED: /*[[#{status.cancelled}]]*/ 'Cancelled'
+    },
+    paymentStatus: {
+      INITIATED: /*[[#{payment.status.initiated}]]*/ 'Initiated',
+      PAID: /*[[#{payment.status.paid}]]*/ 'Paid',
+      FAILED: /*[[#{payment.status.failed}]]*/ 'Failed',
+      CANCELED: /*[[#{payment.status.canceled}]]*/ 'Canceled'
     },
     action: {
       cancel: /*[[#{action.cancel}]]*/ "Hủy",

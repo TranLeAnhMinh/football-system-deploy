@@ -19,6 +19,7 @@ public class BookingHistoryResponse {
     private BookingStatus status;
     private OffsetDateTime createdAt;
     private BigDecimal finalPrice;
+    private PaymentInfoResponse payment;
     private List<SlotResponse> slots;
 
     @Data

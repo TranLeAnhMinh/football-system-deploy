@@ -1,7 +1,10 @@
 package com.example.footballmanagement.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,6 +18,7 @@ import com.example.footballmanagement.dto.response.BookingPriceResponse;
 import com.example.footballmanagement.dto.response.BookingResponse;
 import com.example.footballmanagement.entity.Booking;
 import com.example.footballmanagement.entity.BookingSlot;
+import com.example.footballmanagement.entity.Payment;
 import com.example.footballmanagement.entity.Pitch;
 import com.example.footballmanagement.entity.User;
 import com.example.footballmanagement.entity.Voucher;
@@ -22,6 +26,7 @@ import com.example.footballmanagement.entity.enums.BookingStatus;
 import com.example.footballmanagement.exception.ErrorCode;
 import com.example.footballmanagement.exception.custom.VoucherException;
 import com.example.footballmanagement.repository.BookingRepository;
+import com.example.footballmanagement.repository.PaymentRepository;
 import com.example.footballmanagement.repository.PitchRepository;
 import com.example.footballmanagement.repository.UserRepository;
 import com.example.footballmanagement.service.BookingService;
@@ -44,6 +49,7 @@ public class BookingServiceImpl implements BookingService {
     private final PitchRepository pitchRepo;
     private final VoucherService voucherService;
     private final VoucherUsageService voucherUsageService;
+    private final PaymentRepository paymentRepository;
 
     @Override
     @Transactional
@@ -127,11 +133,37 @@ public class BookingServiceImpl implements BookingService {
 
         int end = Math.min(start + pageable.getPageSize(), total);
 
-        List<BookingHistoryResponse> content = allBookings.subList(start, end)
+        List<Booking> pageBookings = allBookings.subList(start, end);
+        Map<UUID, Payment> paymentByBookingId = preferredPayments(pageBookings);
+
+        List<BookingHistoryResponse> content = pageBookings
                 .stream()
-                .map(ConverterUtil::toBookingHistoryResponse)
+                .map(booking -> ConverterUtil.toBookingHistoryResponse(
+                        booking,
+                        paymentByBookingId.get(booking.getId())
+                ))
                 .toList();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    private Map<UUID, Payment> preferredPayments(List<Booking> bookings) {
+        if (bookings.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> bookingIds = bookings.stream().map(Booking::getId).toList();
+        return paymentRepository.findByBooking_IdInOrderByCreatedAtDesc(bookingIds).stream()
+                .collect(Collectors.toMap(
+                        payment -> payment.getBooking().getId(),
+                        Function.identity(),
+                        this::choosePreferredPayment
+                ));
+    }
+
+    private Payment choosePreferredPayment(Payment existing, Payment candidate) {
+        if (candidate.getStatus().name().equals("PAID") && !existing.getStatus().name().equals("PAID")) {
+            return candidate;
+        }
+        return existing.getCreatedAt().isAfter(candidate.getCreatedAt()) ? existing : candidate;
     }
 }
